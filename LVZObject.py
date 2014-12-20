@@ -45,81 +45,80 @@ UPDATE_MODE = 4
 
 
 class LVZMapObject:
-	"""A class that holds an LVZ Map object. All variables are private, as modifying any single value results in another value being changed.
-	
-	All variables can be accessed through getVariable() methods.
-	
-	When initalizing, pass all values as they are in your compressed LVZ file, use the global variables listed above (MODE, LAYER).
-	
-	The variable 'time' is the displaytime as defined in LVZ file. The variable 'bot' should be the SubspaceBot object your bot runs off of.
-	
-	After doing the changes you wish to do with setVariable(). When you have changed all the values you wish, use doUpdate() to send the changes to the server."""
-	
-	#devs do not need to know the details of how this packet works.
-	def __init__(self,bot,pid,objectID,x_pos,y_pos,image_id,layer,time,mode):
-		if not isinstance(bot,SubspaceBot):
-			raise Exception('the variable Bot should be of the class SubspaceBot')
-		self.__bot = bot
-		self.__pid = pid
-		self.__updateInfo = 0
-		self.__objectTypeAndId = (objectID << 1) | 1 << 0
-		self.__x_pos = x_pos
-		self.__y_pos = y_pos
-		self.__imageId = image_id
-		self.__layerInfo = layer
-		self.__timeAndMode = (mode << 12) | time << 0
-	
-	def setXCoordinates(self,x_pos):
-		self.__x_pos = x_pos
-		self.__updateInfo |= 1 << 0
-	
-	def getXCoordinates(self):
-		return self.__x_pos
-	
-	def setYCoordinates(self,y_pos):
-		self.__y_pos = y_pos
-		self.__updateInfo |= 1 << 0
-	
-	def getYCoordinates(self):
-		return self.__y_pos
+    """A class that holds an LVZ Map object. All variables are private, as modifying any single value results in another value being changed.
 
-	def setCoordinates(self,x_pos,y_pos):
-		self.__x_pos = x_pos
-		self.__y_pos = y_pos
-		self.__updateInfo |= 1 << 0
-		
-	def getCoordinates(self):
-		return (self.__x_pos,self.__y_pos)
-	
-	def setImageId(self,id):
-		self.__imageId = id
-		self.__updateInfo |= 1 << 1
-	
-	def getImageId(self):
-		return self.__imageId
-	
-	def setLayerInfo(self,layer):
-		self.__layerInfo = layer
-		self.__updateInfo |= 1 << 2
-	
-	def getLayerInfo(self):
-		return self.__layerInfo
-	
-	def setTime(self,time):
-		self.__timeAndMode |= time << 0
-		self.__updateInfo |= 1 << 3
-	
-	def getTime(self):
-		return (self.__timeAndMode & 0x0FFF)
-	
-	def setMode(self,mode):
-		self.__timeAndMode |= mode << 12
-		self.__updateInfo |= 1 << 4
+    All variables can be accessed through getVariable() methods.
 
-	def getMode(self):
-		return ((self.__timeAndMode & 0xF000) >> 12)
-	
-	def doUpdate(self):
-		self.__bot.sendMapObjectMove(self.__pid,self.__updateInfo,self.__x_pos,self.__y_pos,self.__objectTypeAndId, self.__imageId, self.__layerInfo, self.__timeAndMode)
-		self.__updateInfo = 0
-		
+    When initalizing, pass all values as they are in your compressed LVZ file, use the global variables listed above (MODE, LAYER).
+
+    The variable 'time' is the displaytime as defined in LVZ file. The variable 'bot' should be the SubspaceBot object your bot runs off of.
+
+    After doing the changes you wish to do with setVariable(). When you have changed all the values you wish, use doUpdate() to send the changes to the server."""
+
+    #devs do not need to know the details of how this packet works.
+    def __init__(self,bot,pid,objectID,x_pos,y_pos,image_id,layer,time,mode):
+        if not isinstance(bot,SubspaceBot):
+            raise Exception('the variable Bot should be of the class SubspaceBot')
+        self.__bot = bot
+        self.__pid = pid
+        self.__updateInfo = 0
+        self.__objectTypeAndId = (objectID << 1) | 1 << 0
+        self.__x_pos = x_pos
+        self.__y_pos = y_pos
+        self.__imageId = image_id
+        self.__layerInfo = layer
+        self.__timeAndMode = (mode << 12) | time << 0
+
+    def setXCoordinates(self,x_pos):
+        self.__x_pos = x_pos
+        self.__updateInfo |= 1 << 0
+
+    def getXCoordinates(self):
+        return self.__x_pos
+
+    def setYCoordinates(self,y_pos):
+        self.__y_pos = y_pos
+        self.__updateInfo |= 1 << 0
+
+    def getYCoordinates(self):
+        return self.__y_pos
+
+    def setCoordinates(self,x_pos,y_pos):
+        self.__x_pos = x_pos
+        self.__y_pos = y_pos
+        self.__updateInfo |= 1 << 0
+
+    def getCoordinates(self):
+        return (self.__x_pos,self.__y_pos)
+
+    def setImageId(self,id):
+        self.__imageId = id
+        self.__updateInfo |= 1 << 1
+
+    def getImageId(self):
+        return self.__imageId
+
+    def setLayerInfo(self,layer):
+        self.__layerInfo = layer
+        self.__updateInfo |= 1 << 2
+
+    def getLayerInfo(self):
+        return self.__layerInfo
+
+    def setTime(self,time):
+        self.__timeAndMode |= time << 0
+        self.__updateInfo |= 1 << 3
+
+    def getTime(self):
+        return (self.__timeAndMode & 0x0FFF)
+
+    def setMode(self,mode):
+        self.__timeAndMode |= mode << 12
+        self.__updateInfo |= 1 << 4
+
+    def getMode(self):
+        return ((self.__timeAndMode & 0xF000) >> 12)
+
+    def doUpdate(self):
+        self.__bot.sendMapObjectMove(self.__pid,self.__updateInfo,self.__x_pos,self.__y_pos,self.__objectTypeAndId, self.__imageId, self.__layerInfo, self.__timeAndMode)
+        self.__updateInfo = 0

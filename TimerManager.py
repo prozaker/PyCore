@@ -8,33 +8,33 @@ import time
 
 
 class Timer2(object):
-	def __init__(self,id,delay,data):
-		self.id = id
-		self.expire_time = time.time() + delay
-		self.data = data
-	def hasExpired(self):
-		if time.time() >= self.expire_time:
-			return True
-		else:
-			return False
-	def __repr__(self):
-		return str(self.expire_time)
+    def __init__(self,id,delay,data):
+        self.id = id
+        self.expire_time = time.time() + delay
+        self.data = data
+    def hasExpired(self):
+        if time.time() >= self.expire_time:
+            return True
+        else:
+            return False
+    def __repr__(self):
+        return str(self.expire_time)
 
 class TimerManager(object):
-	"""
-	to replace the core timer functions since they dont really work well
-	with multi-module systems
-	"""
-	def __init__(self):
-		self.id = 1
-		self.tl = []
-		self.sort = False
-	def set(self,secs,data):
-		"""same as settimer"""
-		self.id+=1;
-		t = Timer2(self.id,secs,data)
-		self.tl.append(t)
-		self.sort = True
+    """
+    to replace the core timer functions since they dont really work well
+    with multi-module systems
+    """
+    def __init__(self):
+        self.id = 1
+        self.tl = []
+        self.sort = False
+    def set(self,secs,data):
+        """same as settimer"""
+        self.id+=1;
+        t = Timer2(self.id,secs,data)
+        self.tl.append(t)
+        self.sort = True
 #		i = 0
 #		inserted = False
 #		if self.tl:
@@ -49,33 +49,33 @@ class TimerManager(object):
 #				self.tl.index(len(self.tl),t)#insert at end
 #		else:
 #			self.tl.append(t)
-		
-		return self.id
-	def delete(self,id):
-		"""delete a specific timer"""
-		self.tl = [ t for t in self.tl if t.id != id ]
-	def deleteAll(self):
-		"""delete all timers"""
-		del self.tl[:]
-	def getExpired(self):
-		"""
-		use this in event_tick if it returns None no expired timers yet
-		this will return a timer if expired and delete it from the list
-		"""
-		if self.sort:
-			self.tl = sorted(self.tl,key=lambda t:t.expire_time)
-			self.sort = False
-		#c = 0
-		#for t in self.tl:
-		#	c+= 1
-		#	print "t["+str(c)+"]"+ str(t.expire_time)
-			
-		if self.tl and self.tl[0].hasExpired():
-			return self.tl.pop(0)
-		else:
-			return None
-			
-		
+
+        return self.id
+    def delete(self,id):
+        """delete a specific timer"""
+        self.tl = [ t for t in self.tl if t.id != id ]
+    def deleteAll(self):
+        """delete all timers"""
+        del self.tl[:]
+    def getExpired(self):
+        """
+        use this in event_tick if it returns None no expired timers yet
+        this will return a timer if expired and delete it from the list
+        """
+        if self.sort:
+            self.tl = sorted(self.tl,key=lambda t:t.expire_time)
+            self.sort = False
+        #c = 0
+        #for t in self.tl:
+        #	c+= 1
+        #	print "t["+str(c)+"]"+ str(t.expire_time)
+
+        if self.tl and self.tl[0].hasExpired():
+            return self.tl.pop(0)
+        else:
+            return None
+
+
 #
 #class TimerManager2(object):
 #	'''
