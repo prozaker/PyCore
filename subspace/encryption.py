@@ -22,10 +22,10 @@ class SubspaceEncryption:
             if (t > 0x7FFFFFFFL):
                 t = (t + 0x7FFFFFFFL) & 0xFFFFFFFFL
 
-            self.table[i*2] = t & 0xFF
-            self.table[i*2 + 1] = (t >> 8) & 0xFF
+            self.table[i * 2] = t & 0xFF
+            self.table[i * 2 + 1] = (t >> 8) & 0xFF
 
-    def encryptData(self, data):
+    def encrypt_data(self, data):
         result = array.array('B', [0] * len(data))
         tempKey = array.array('B', self.server_key)
         for i in xrange(0, len(data)):
@@ -35,7 +35,7 @@ class SubspaceEncryption:
 
         return result.tostring()
 
-    def decryptData(self, data):
+    def decrypt_data(self, data):
         result = array.array('B', [0] * len(data))
         tempKey = array.array('B', self.server_key)
         for i in xrange(0, len(data)):

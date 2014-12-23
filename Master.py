@@ -144,7 +144,7 @@ class Bot(BotInterface):
     def HCShutdown(self, ssbot, event):
         self.StopAllBots()
         ssbot.reconnect = False
-        ssbot.disconnectFromServer()
+        ssbot.disconnect_from_server()
         ssbot.sendReply(event, "ok")
         self.logger.critical("Master is being Shutdown command issued by: %s" %
                              event.pname)
@@ -450,20 +450,20 @@ def MasterMain():
                 BotList.append(bot)
             bot = None
         wait_time = 0
-        while ssbot.shouldReconnect():
-            ssbot.connectToServer(config.Host,
+        while ssbot.should_reconnect():
+            ssbot.connect_to_server(config.Host,
                                   config.Port,
                                   config.MasterName,
                                   config.MasterPassword,
                                   config.MasterArena)
             while ssbot.isConnected():
                     wait_time = 0
-                    event = ssbot.waitForEvent()
+                    event = ssbot.wait_for_event()
                     for b in BotList:
                         b.HandleEvents(ssbot, event)
             logger.critical("Master disconnected")
-            if ssbot.shouldReconnect():
-                ssbot.resetState()
+            if ssbot.should_reconnect():
+                ssbot.reset_state()
                 wait_time += 60
 
                 # if wait is over 10 mins reset wait period
@@ -481,7 +481,7 @@ def MasterMain():
         LogException(logger)
     finally:
         if ssbot.isConnected():
-            ssbot.disconnectFromServer()
+            ssbot.disconnect_from_server()
         logger.info("Master disconnected")
         logger.info("Waiting For Bots to stop")
         logger.critical("Master shutting down")

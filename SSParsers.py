@@ -11,13 +11,13 @@ class ParserInterface:
     def __init__(self):
         pass
 
-    def Parse(self, line):
+    def parse(self, line):
         pass
 
-    def Parsed(self):
+    def parsed(self):
         pass
 
-    def Clear(self):
+    def clear(self):
         pass
 
 
@@ -32,7 +32,7 @@ class Identity(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -44,10 +44,10 @@ class Identity(ParserInterface):
                 self.name = matched.group(4)
                 self.mid = long(matched.group(5))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -61,7 +61,7 @@ class Ping(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -72,10 +72,10 @@ class Ping(ParserInterface):
                 self.high = int(matched.group(3))
                 self.ave = int(matched.group(4))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -89,7 +89,7 @@ class PacketLoss(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -101,10 +101,10 @@ class PacketLoss(ParserInterface):
                 self.s2crel0 = int(matched.group(4))
                 self.s2crel1 = int(matched.group(5))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -115,7 +115,7 @@ class PacketTotals(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -126,10 +126,10 @@ class PacketTotals(ParserInterface):
                 self.c2s_sent = int(matched.group(3))
                 self.c2s_recieved = int(matched.group(4))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -143,7 +143,7 @@ class C2S_Irregular_Packets(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -156,10 +156,10 @@ class C2S_Irregular_Packets(ParserInterface):
                 self.total_total = int(matched.group(5))
                 self.total_ratio = float(matched.group(6))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -173,7 +173,7 @@ class S2C_Irregular_Packets(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -186,10 +186,10 @@ class S2C_Irregular_Packets(ParserInterface):
                 self.total_total = int(matched.group(5))
                 self.total_ratio = float(matched.group(6))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -205,7 +205,7 @@ class Usage(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -221,10 +221,10 @@ class Usage(ParserInterface):
                 self.creation_month = int(matched.group(8))
                 self.creation_year = int(matched.group(9))
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -238,7 +238,7 @@ class ConnInfo(ParserInterface):
     def __init__(self):
         self.__parsed = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         if line.startswith(self.__class__.__startswith):
             matched = self.__class__.__pattern.match(line)
             if(matched):
@@ -249,10 +249,10 @@ class ConnInfo(ParserInterface):
                 self.messagelogging = int(matched.group(3))
                 self.connectiontype = matched.group(4)
 
-    def Parsed(self):
+    def parsed(self):
         return self.__parsed
 
-    def Clear(self):
+    def clear(self):
         self.__parsed = 0
 
 
@@ -279,16 +279,16 @@ class Info:
         self.parsers.append(self.conninfo)
         self.ticks = 0
 
-    def Clear(self):
+    def clear(self):
         for p in self.parsers:
-            p.Clear()
+            p.clear()
         self.ticks = 0
 
-    def Parse(self, line):
+    def parse(self, line):
         mc = 0
         for p in self.parsers:
-            p.Parse(line)
-            mc += p.Parsed()
+            p.parse(line)
+            mc += p.parsed()
 
         if mc == len(self.parsers):
             self.ticks = time.time()
@@ -314,4 +314,4 @@ if __name__ == '__main__':  # test
     msg_list = msg.split("\n")
 
     for l in msg_list:
-        info.Parse(l)
+        info.parse(l)

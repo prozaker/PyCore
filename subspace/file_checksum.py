@@ -14,7 +14,7 @@ class FileChecksum():
         #    self.d.append(int(0))
         self.d = array.array("L", [0] * 256)
 
-    def getFileChecksum(self, filename):
+    def get_file_checksum(self, filename):
         data = open(filename, "rb").read()
         Index = 0
         Key = -1
@@ -25,30 +25,30 @@ class FileChecksum():
             i += 1
         return ~Key
 
-    def generate4(self, offset, key):
+    def generate_4(self, offset, key):
         self.d[offset] = key
         self.d[offset+1] = key ^ G4_MODIFIER
         key ^= (G4_MODIFIER << 1)
         self.d[offset+2] = key
         self.d[offset+3] = key ^ G4_MODIFIER
 
-    def generate16(self, offset, key):
-        self.generate4(offset, key)
-        self.generate4(offset + 4, key ^ G16_MODIFIER)
+    def generate_16(self, offset, key):
+        self.generate_4(offset, key)
+        self.generate_4(offset + 4, key ^ G16_MODIFIER)
         key ^= (G16_MODIFIER << 1)
-        self.generate4(offset + 8, key)
-        self.generate4(offset + 12, key ^ G16_MODIFIER)
+        self.generate_4(offset + 8, key)
+        self.generate_4(offset + 12, key ^ G16_MODIFIER)
 
-    def generate64(self, offset, key):
-        self.generate16(offset, key)
-        self.generate16(offset + 16, key ^ G64_MODIFIER)
+    def generate_64(self, offset, key):
+        self.generate_16(offset, key)
+        self.generate_16(offset + 16, key ^ G64_MODIFIER)
         key ^= (G64_MODIFIER << 1)
-        self.generate16(offset + 32, key)
-        self.generate16(offset + 48, key ^ G64_MODIFIER)
+        self.generate_16(offset + 32, key)
+        self.generate_16(offset + 48, key ^ G64_MODIFIER)
 
-    def generateChecksumArray(self, key):
-        self.generate64(0, key)
-        self.generate64(64, key ^ G256_MODIFIER)
+    def generate_checksum_array(self, key):
+        self.generate_64(0, key)
+        self.generate_64(64, key ^ G256_MODIFIER)
         key ^= (G256_MODIFIER << 1)
-        self.generate64(128, key)
-        self.generate64(192, key ^ G256_MODIFIER)
+        self.generate_64(128, key)
+        self.generate_64(192, key ^ G256_MODIFIER)

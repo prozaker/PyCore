@@ -271,7 +271,7 @@ class Bot(BotInterface):
         else:
             # if r.query.data[2] in self.cache:
             #     self.cache[r.query.data[2]] = (
-            #       copy.copy(r), GetTickCountHs())
+            #       copy.copy(r), get_tick_count_hs())
             r.GenericResultPrettyPrinter(
                 ssbot, r.query.data[0], r.query.data[1])
 

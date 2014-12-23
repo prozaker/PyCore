@@ -37,7 +37,7 @@ class BotInstance(Thread):
         self.keepgoing = False
         self.ssbot.reconnect = False
         if self.ssbot is not None:
-            self.ssbot.disconnectFromServer()
+            self.ssbot.disconnect_from_server()
 
     def queueBroadcast(self, event):  # used by master
         if self.ssbot:
@@ -66,7 +66,7 @@ class BotInstance(Thread):
                 bot = None
             retry = 0
             while self.keepgoing:
-                ssbot.connectToServer(
+                ssbot.connect_to_server(
                     self.host,
                     self.port,
                     self.bname,
@@ -75,12 +75,12 @@ class BotInstance(Thread):
                 )
                 while ssbot.isConnected() and self.keepgoing:
                         retry = 0
-                        event = ssbot.waitForEvent()
+                        event = ssbot.wait_for_event()
                         for b in BotList:
                             b.HandleEvents(ssbot, event)
-                if ssbot.shouldReconnect() and retry < 6:
+                if ssbot.should_reconnect() and retry < 6:
                     self.logger.debug("Disconnected...")
-                    ssbot.resetState()
+                    ssbot.reset_state()
                     retry += 1
                     time.sleep(60 * retry)
                     self.logger.debug("Reconnecting...")
@@ -91,6 +91,6 @@ class BotInstance(Thread):
             LogException(self.logger)
         finally:
             if ssbot.isConnected():
-                ssbot.disconnectFromServer()
+                ssbot.disconnect_from_server()
             for b in BotList:
                 b.Cleanup()

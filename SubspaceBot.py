@@ -13,12 +13,13 @@ import time
 import zlib
 import platform
 import traceback
-import SubspaceCoreStack
-from SubspaceCoreStack import GetTickCountHs, TickDiff, CoreStack, \
-    PRIORITY_HIGH, PRIORITY_NORMAL
-
-from SubspaceSettings import *
 from logging import DEBUG, INFO, ERROR, CRITICAL
+
+from subspace import core_stack
+from subspace.core_stack import get_tick_count_hs, tick_diff, CoreStack, \
+    PRIORITY_HIGH
+from subspace.settings import *
+
 
 EVENT_ERROR = 0
 """
@@ -142,7 +143,7 @@ updates:
             player._setStatus(status)
             player.bounty = bounty
             player.ping = latency
-            player.last_pos_update_tick = GetTickCountHs()
+            player.last_pos_update_tick = get_tick_count_hs()
 
 
 if sd_updated == true then
@@ -710,7 +711,7 @@ class Timer:
         self.id = id
         self.duration = seconds * 100  # to ticks
         self.user_data = user_data
-        self.base = GetTickCountHs()
+        self.base = get_tick_count_hs()
 
 
 def GetShipName(ship):
@@ -837,16 +838,16 @@ class Oplist:
             file.write(str(lvl) + ":" + name + "\n")
 
 
-class SubspaceBot(SubspaceCoreStack.CoreStack):
-    """The bot. Must be connected with connectToServer() and then
-    waitForEvent() must be called frequently for adequate performance.
+class SubspaceBot(core_stack.CoreStack):
+    """The bot. Must be connected with connect_to_server() and then
+    wait_for_event() must be called frequently for adequate performance.
 
     The typical bot's mainloop looks like:
 
     .. sourcecode:: python
 
         while bot.isConnected():
-            event = bot.waitForEvent():
+            event = bot.wait_for_event():
             if event.type = ...:
                 ...
             elif event.type = ...:
@@ -912,7 +913,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
         self.__timer_list = []  # Timer()
         self.__next_timer_id = 0
-        self.__last_timer_expire_tick = GetTickCountHs()
+        self.__last_timer_expire_tick = get_tick_count_hs()
 
         # used for formatting will store the max(len("!name/!alias [args]"))
         self.__max_cmd_len = 10
@@ -1219,21 +1220,21 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
     def __expireTimers(self):
         """Expires timers that are in the core's timer list."""
-        now = GetTickCountHs()
+        now = get_tick_count_hs()
         self.__timer_list.sort(
             lambda a, b: int(
-                (a.duration - TickDiff(now, a.base)) -
-                (b.duration - TickDiff(now, b.base))
+                (a.duration - tick_diff(now, a.base)) -
+                (b.duration - tick_diff(now, b.base))
             )
         )
 
         while self.__timer_list:
             t = self.__timer_list[0]
-            if TickDiff(now, t.base) == t.duration:
+            if tick_diff(now, t.base) == t.duration:
                 event = GameEvent(EVENT_TIMER)
                 event.id = t.id
                 event.user_data = t.user_data
-                self.__addPendingEvent(event)
+                self.__add_pending_event(event)
                 self.__timer_list.pop(0)
             else:
                 # since the timer list is sorted the timers after
@@ -1268,7 +1269,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         mid[3] = (mid[3] % 24) + 7
         return struct.unpack_from('<I', mid.tostring())[0]
 
-    def connectToServer(self, hostname, port, username, password,
+    def connect_to_server(self, hostname, port, username, password,
                         arena='# master', new_connection=True):
         """Connect to a server using the Subspace protocol.
 
@@ -1278,17 +1279,17 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         seperated by an asterisk.  For example,
         'bot_password*smod_password'. Arena is the name of the arena
         to join upon entering the zone."""
-        CoreStack.connectToServer(self, hostname, port)
-        self._queueSyncRequest()
-        self.flushOutboundQueues()
+        CoreStack.connect_to_server(self, hostname, port)
+        self._queue_sync_request()
+        self.flush_outbound_queues()
         self.__queueLoginPacket(username, password)
-        self.flushOutboundQueues()
+        self.flush_outbound_queues()
         self.arena = arena
         self.__connected = True
-        self.__last_pos_update_sent_tick = GetTickCountHs()
+        self.__last_pos_update_sent_tick = get_tick_count_hs()
 
     def __queueLoginPacket(self, username, password):
-        self.queuePacket(struct.pack(
+        self.queue_packet(struct.pack(
             "<BB32s32sIBhHhIIIIII",
             0x09,
             0,
@@ -1309,7 +1310,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         join_type = 0xFFFD
         if arena.isdigit():
             join_type = int(arena)
-        self.queuePacket(struct.pack(
+        self.queue_packet(struct.pack(
             "<BBHHHH16s", 0x01, ship_type, 0, 4096, 4096, join_type, arena))
 
     def sendArenaMessage(self, message, sound=SOUND_NONE):
@@ -1474,14 +1475,14 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         # lets make this private
         if isinstance(message, list):
             for m in message:
-                self.queuePacket(struct.pack(
+                self.queue_packet(struct.pack(
                     "<BBBH",
                     0x06,
                     message_type,
                     sound,
                     target_pid) + m[:247] + '\x00', reliable=True)
         else:
-            self.queuePacket(struct.pack(
+            self.queue_packet(struct.pack(
                 "<BBBH",
                 0x06,
                 message_type,
@@ -1503,7 +1504,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         event.event_source = source
         event.event_name = name
         event.event_data = data
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def sendBroadcast(self, message):  # used by bots/modules
         """
@@ -1516,11 +1517,11 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         if self.__mqueue:  # if is being used as a module in master
             self.__mqueue.queue(event)  # send to master for distribution
         else:
-            self.__addPendingEvent(event)  # else queue back to the core
+            self.__add_pending_event(event)  # else queue back to the core
 
     # used by master to queue back the broadcasts
     def queueBroadcast(self, event):
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def spectatePlayer(self, player):
         # sets the bot to spectate specified player.
@@ -1540,10 +1541,10 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
     def __queueSpecPlayerPacket(self, player):
         if player and player.ship != SHIP_SPECTATOR:
-            self.queuePacket(struct.pack("<BH", 0x08, player.pid),
+            self.queue_packet(struct.pack("<BH", 0x08, player.pid),
                              reliable=True)
         else:
-            self.queuePacket(struct.pack("<BH", 0x08, 0xFFFF), reliable=True)
+            self.queue_packet(struct.pack("<BH", 0x08, 0xFFFF), reliable=True)
 
     def SetBotBanner(self, banner):
         """Sets the bots banner to banner given as an argument. Banner
@@ -1552,7 +1553,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
     def __queueBannerPacket(self, banner):
         packet = struct.pack("<B", 0x19) + banner
-        self.queuePacket(packet, reliable=True)
+        self.queue_packet(packet, reliable=True)
 
     def sendDeathPacket(self, pp):
         """Tells the bot to queue a death packet to the server, with
@@ -1562,12 +1563,12 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
     def __queueDeathPacket(self, pid):
         packet = struct.pack("<BHH", 0x05, pid, self.bounty)
-        self.queuePacket(packet, reliable=True)
+        self.queue_packet(packet, reliable=True)
 
     def __handleLoginPacket(self, packet):
         self.__queueArenaLoginPacket(self.arena)
-        self.flushOutboundQueues()
-        self.__addPendingEvent(GameEvent(EVENT_START))
+        self.flush_outbound_queues()
+        self.__add_pending_event(GameEvent(EVENT_START))
 
     def __eventStartPostprocessor(self, event):
         if len(self.__chats) > 0:
@@ -1605,7 +1606,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             #       found:%x"%(turreted))
             event = GameEvent(EVENT_ENTER)
             event.player = player
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
             packet = packet[64:]
 
     def __handleGoalPacket(self, packet):
@@ -1613,7 +1614,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         event = GameEvent(EVENT_GOAL)
         event.freq = freq
         event.points = points
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleBallPositionPacket(self, packet):
         type, ball_id, x_pos, y_pos, x_vel, y_vel, pid, time = \
@@ -1632,7 +1633,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         b.y = y_pos
         b.pid = pid
         b.time = time
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleFlagUpdatePacket(self, packet):  # 0x12
         type, flag_id, x, y, freq = struct.unpack_from("<BHHHH", packet)
@@ -1646,7 +1647,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         f.freq = freq
         f.x = x
         f.y = y
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleFlagVictoryPacket(self, packet):  # 0x14
         type, freq, points = struct.unpack_from("<BHL", packet)
@@ -1658,7 +1659,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             f.x = COORD_NONE
             f.y = COORD_NONE
         # addpostprocessor and reset flag state
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleScoreUpdatePacket(self, packet):
         type, pid, flag_points, kill_points, wins, losses = \
@@ -1677,7 +1678,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             player.wins = wins
             player.losses = losses
             event.player = player
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handlePrizePacket(self, packet):
         type, time_stamp, x, y, prize, pid = \
@@ -1692,7 +1693,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.player = player
             player.x = x
             player.y = y
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleFlagPickupPacket(self, packet):
         type, flag_id, pid = struct.unpack_from("<BHH", packet)
@@ -1705,7 +1706,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.flag = flag
             # self.sendPublicMessage("fp/ft %d:%x->%x"%(flag_id,
             #   flag.carried_by_pid, pid))
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __eventFlagPickupPostprocessor(self, event):
         event.flag.x = COORD_NONE
@@ -1721,7 +1722,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.player = player
             # move to post processor
             event.flag_count = player.flag_count
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __eventFlagDropPostprocessor(self, event):
         player = event.player
@@ -1748,7 +1749,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
                 p.wins = 0
                 p.losses = 0
                 event.player = p
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleTurretPacket(self, packet):
         type, turreter_pid, turreted_pid = struct.unpack_from("<BHH", packet)
@@ -1765,10 +1766,10 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
                 event.old_turreted = self.findPlayerByPid(
                     turreter.turreted_pid)
             turreter.turreted_pid = turreted_pid
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleArenaSettingsPacket(self, packet):
-        self.settings = arenaSettings(packet)
+        self.settings = ArenaSettings(packet)
 
     def __handlePeriodicRewardPacket(self, packet):
         packet = packet[1:]
@@ -1782,7 +1783,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
             event = GameEvent(EVENT_PERIODIC_REWARD)
             event.point_list = point_list
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleTurfFlagUpdatePacket(self, packet):
         packet = packet[1:]
@@ -1867,7 +1868,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             layer,
             timemode
         )
-        self.queuePacket(packet)
+        self.queue_packet(packet)
 
     def sendLvzObjectToggle(self, pp, list_of_tuples):
         """"
@@ -1888,7 +1889,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
                 (objtoggletuple[0] & 0x7FFF) if objtoggletuple[1] else
                 (objtoggletuple[0] | 0x8000)
             )
-        self.queuePacket(packet)
+        self.queue_packet(packet)
 
     def __handlePlayerLeftPacket(self, packet):
         # this should really use a player here dictionary and add the
@@ -1898,7 +1899,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         if player:
             event = GameEvent(EVENT_LEAVE)
             event.player = player
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleLoginResponsePacket(self, packet):
         login_response, = struct.unpack_from("<B", packet, 1)
@@ -1929,7 +1930,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             if pid == self.pid:
                 self.freq = freq
                 self.ship = ship
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleFreqchangePacket(self, packet):
         type, pid, freq, unused = struct.unpack_from("<BHHB", packet)
@@ -1943,7 +1944,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             if pid == self.pid:
                 self.freq = freq
                 self.ship = player.ship
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __neutFlagsCarriedByPlayerProccessor(self, event):
         """
@@ -1962,7 +1963,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.new_freq = player.freq
             event.new_ship = ship
             event.player = player
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleMessagePacket(self, packet):
         type, message_type, sound, pid = struct.unpack_from("<BBBH", packet)
@@ -2023,7 +2024,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         event.alert_name = alert
         event.alert_arena = arena
 
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
         # add the command event
         if len(message) > 0 and message[0] == '!' and message_type in \
@@ -2052,7 +2053,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.alert_arena = arena
             event.command_type = message_type
 
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleCommandDie(self, event):
         self.sendReply(event, "Ok")
@@ -2061,7 +2062,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         else:
             self.__log(INFO, "%s stopped by %s" % (self.name, event.pname))
 
-        self.disconnectFromServer()
+        self.disconnect_from_server()
 
     def __handleCommandAbout(self, event):
         self.sendReply(
@@ -2230,7 +2231,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             self.freq = player.freq
             self.sendPrivateMessage(player, "*bandwidth 10000")
             self.sendPublicMessage("*relkills 1")
-            self.__addPendingEvent(GameEvent(EVENT_LOGIN))
+            self.__add_pending_event(GameEvent(EVENT_LOGIN))
 
         return event
 
@@ -2244,18 +2245,18 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
     def __eventTickPreprocessor(self, event):
         # send pos update
-        now = GetTickCountHs()
+        now = get_tick_count_hs()
         # xxx this will need to be changed later if the bot is out of ship
         # (10hs interval if out of ship)
 
         # update position every 10 hs if in ship, otherwise every 1 second
         if self.ship is not None:
             time_period = 100 if self.ship == SHIP_SPECTATOR else 10
-            if TickDiff(now, self.__last_pos_update_sent_tick) > time_period:
+            if tick_diff(now, self.__last_pos_update_sent_tick) > time_period:
                 self.__queuePositionUpdatePacket()
                 self.__last_pos_update_sent_tick = now
 
-        if TickDiff(now, self.__last_timer_expire_tick) > 100:
+        if tick_diff(now, self.__last_timer_expire_tick) > 100:
             self.__expireTimers()
             self.__last_timer_expire_tick = now
 
@@ -2374,7 +2375,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             "<BBIhHBBHhHHH",
             0x03,
             self.rotation,
-            GetTickCountHs(),
+            get_tick_count_hs(),
             self.x_vel,
             self.y_pos,
             checksum,
@@ -2390,8 +2391,8 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
         packet = packet[:10] + chr(checksum) + packet[11:]
 
-        self.queuePacket(packet, priority=PRIORITY_HIGH)
-        self.__last_pos_update_sent_tick = GetTickCountHs()
+        self.queue_packet(packet, priority=PRIORITY_HIGH)
+        self.__last_pos_update_sent_tick = get_tick_count_hs()
 
     def setPosition(self, x_pos=8192, y_pos=8192,
                     x_vel=0, y_vel=0, rotation=0,
@@ -2453,7 +2454,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         x = x >> 4
         y = y >> 4
         packet = struct.pack("<BHH", 0x1C, x, y)
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendFreqChange(self, freq):
         """Sends a freq change request to the server.
@@ -2462,7 +2463,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         your freq has not changed."""
 
         packet = struct.pack("<BH", 0x0F, freq)
-        self.queuePacket(packet, priority=PRIORITY_HIGH)
+        self.queue_packet(packet, priority=PRIORITY_HIGH)
 
     def __isNumeric(self, cstr):
         for i in range(len(cstr)):
@@ -2484,13 +2485,13 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         if not arena:
             return
         # send arena leave packet
-        self.queuePacket(struct.pack("<B", 0x02), reliable=True)
-        self.flushOutboundQueues()
+        self.queue_packet(struct.pack("<B", 0x02), reliable=True)
+        self.flush_outbound_queues()
         # generate leaves for everyone in the current arena
         for p in self.players_here:
             event = GameEvent(EVENT_LEAVE)
             event.player = p
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
         # make enter arena packet
         if arena:
             if self.__isNumeric(arena):
@@ -2501,12 +2502,12 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             atype = 0xFFFF  # random arena
         packet = struct.pack("<BBHHHH", 0x01, 8, 0, 4096, 4096, atype)
         packet = packet + arena[:15] + '\x00' if atype == 0xFFFD else packet
-        self.queuePacket(packet, reliable=True)
+        self.queue_packet(packet, reliable=True)
 
         event = GameEvent(EVENT_ARENA_CHANGE)
         event.old_arena = self.arena
         self.arena = arena
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def sendShipChange(self, ship_type):
         """Sends a ship change request to the server.
@@ -2515,14 +2516,14 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         your ship has not changed."""
 
         packet = struct.pack("<BB", 0x18, ship_type)
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendPickupFlags(self, flag_id):
         """
         try to pickup a flag
         """
         packet = struct.pack("<BH", 0x13, flag_id)
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendFlagDrop(self):
         """
@@ -2530,7 +2531,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         make it drop all flags at its current coordinates
          """
         packet = struct.pack("<B", 0x15)
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendPickupBall(self, id):
         """
@@ -2539,7 +2540,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         if id >= 0 and id < MAX_BALLS:
             b = self.ball_list[id]
             packet = struct.pack("<BBI", 0x20, b.id, b.time)
-            self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+            self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendScoreGoal(self, id):  # doesnt work
         """
@@ -2547,22 +2548,22 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         """
         # if id = 0 and id <MAX_BALLS:
         #    b = self.ball_list[id]
-        packet = struct.pack("<BBI", 0x21, id, GetTickCountHs())
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+        packet = struct.pack("<BBI", 0x21, id, get_tick_count_hs())
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendShootBall(self, id, x, y, dx, dy):
         """shoots powerball if the bot has a ball x, y in pixels"""
         # if id = 0 and id <MAX_BALLS:
         #    b = self.ball_list[id]
         packet = struct.pack("<BBhhhhhI", 0x1F, id, x, y,
-                             dx, dy, self.pid, GetTickCountHs())
-        self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
+                             dx, dy, self.pid, get_tick_count_hs())
+        self.queue_packet(packet, reliable=True, priority=PRIORITY_HIGH)
 
     def sendAttach(self, pp):  # untested
         """sendAttach use this if you want the bot to attach to a player"""
         pid = self.__toPid(pp)
         packet = struct.pack("<BH", 0x10, pid)
-        self.queuePacket(packet, reliable=True)
+        self.queue_packet(packet, reliable=True)
 
     def sendChangeSettings(self, settings_list):
         """
@@ -2577,7 +2578,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             for e in settings_list:
                 packet += e + chr(0)
             packet += chr(0)
-            self.queuePacket(packet, reliable=True)
+            self.queue_packet(packet, reliable=True)
         else:
             self.__log(
                 DEBUG,
@@ -2601,7 +2602,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         player.sd_decoys = (t1 & (0xF << 18)) >> 18
         player.sd_rockets = (t1 & (0xF << 22)) >> 22
         player.sd_portals = (t1 & (0xF << 26)) >> 26
-        player.sd_time = GetTickCountHs()
+        player.sd_time = get_tick_count_hs()
 
     def __handleSmallPositionUpdatePacket(self, packet):
         # pos updates dont come for yourself, so this packet does not
@@ -2618,7 +2619,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             player._setStatus(status)
             player.bounty = bounty
             player.ping = latency
-            player.last_pos_update_tick = GetTickCountHs()
+            player.last_pos_update_tick = get_tick_count_hs()
 
             event = GameEvent(EVENT_POSITION_UPDATE)
             event.player = player
@@ -2628,12 +2629,12 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             else:
                 event.sd_updated = False
 
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleKothGameReset(self, packet):
         # dont really need to decode this just
         # send a response to remove bot from koth game
-        self.queuePacket(struct.pack("<B", 0x1E), reliable=True)
+        self.queue_packet(struct.pack("<B", 0x1E), reliable=True)
 
     def __parseWeapons(self, event, weapons):
         event.weapons_type = (weapons & 0x1F)
@@ -2662,7 +2663,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             player._setStatus(status)
             player.bounty = bounty
             player.ping = latency
-            player.last_pos_update_tick = GetTickCountHs()
+            player.last_pos_update_tick = get_tick_count_hs()
 
             event = GameEvent(EVENT_POSITION_UPDATE)
             event.player = player
@@ -2674,7 +2675,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
                 self.__parseExtraPlayerData(event, packet[21:])
             else:
                 event.sd_updated = False
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __handleKillPacket(self, packet):
         type, death_green_id, killer_pid, killed_pid, bounty, \
@@ -2692,7 +2693,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.flags_transfered = flags_transfered
             killer.flag_count += flags_transfered
             killed.flag_count = 0
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
 
     def __eventKillPostprocessor(self, event):
         pass
@@ -2711,7 +2712,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
         event = GameEvent(EVENT_ARENA_LIST)
         event.arena_list = arena_list
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleBrickDropPacket(self, packet):
         packet = packet[1:]
@@ -2723,7 +2724,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             packet = packet[16:]
         event = GameEvent(EVENT_BRICK)
         event.brick_list = l
-        self.__addPendingEvent(event)
+        self.__add_pending_event(event)
 
     def __handleWarptoPacket(self, packet):
         type, x, y = struct.unpack_from("<BHH", packet)
@@ -2773,20 +2774,20 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             #   "//" + filename, "rb").read())
             packet += open(os.getcwd() + "//" + filename, "rb").read()
             self.__log(DEBUG, "sending file:%s" % filename)
-            self.queuePacket(packet)
+            self.queue_packet(packet)
         else:
             self.__log(ERROR, "sendfile %s localfile doesnt exist" % filename)
         # self.__log(INFO, "*putfile disabled(doesnt work)")
 
     def __requestLevelFile(self):
-        self.queuePacket(struct.pack("<B", 0x0C), reliable=True)
+        self.queue_packet(struct.pack("<B", 0x0C), reliable=True)
 
     def __handleMapInformationPacket(self, packet):
         type, mapname, checksum_remote = struct.unpack_from("<B16sI", packet)
         if self.__downloadLevelFiles:
             mapname = mapname[0:mapname.find(chr(0))]
             if (os.path.isfile(os.getcwd() + "//" + mapname)):
-                checksum_local = self.fc.getFileChecksum(mapname)
+                checksum_local = self.fc.get_file_checksum(mapname)
                 if checksum_local != checksum_remote:
                     # self.__requestLevelFile()
                     # self.__log(DEBUG, "MAPLEVEL CHANGED???: ([%x]!=%x" %
@@ -2814,7 +2815,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             event.energy_old = energy_old
             event.energy_lost = energy_lost
             self.__parseWeapons(event, weapons)
-            self.__addPendingEvent(event)
+            self.__add_pending_event(event)
             packet = packet[9:]
             # print("damage " + event.attacked.name +" damage:" + str(
             #   event.energy_lost) + " old:" + str(event.energy_old) +
@@ -2839,13 +2840,13 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         )
         packet += (self.__makePaddedString("PYCore", 40) * 14)
 
-        self.queuePacket(packet, True, PRIORITY_HIGH)
+        self.queue_packet(packet, True, PRIORITY_HIGH)
 
-    def resetState(self):
+    def reset_state(self):
         if self.__connected:
             raise Exception("wtf you cant reset state while connected you fag")
         else:
-            CoreStack.resetState(self)
+            CoreStack.reset_state(self)
             self.__players_by_pid = {}  # pid: Player
             self.__players_by_name = {}  # name: Player
 
@@ -2857,9 +2858,9 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             self.__last_event_generated = None
             self.__timer_list = []  # Timer()
             self.__next_timer_id = 0
-            self.__last_timer_expire_tick = GetTickCountHs()
+            self.__last_timer_expire_tick = get_tick_count_hs()
 
-    def waitForEvent(self):
+    def wait_for_event(self):
         """Wait for an event.
 
         A GameEvent class instance is returned, and its type can be
@@ -2897,8 +2898,8 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
             # there are no more bot-level events to process, so call the core's
             # own wait for event handler
-            event = CoreStack.waitForEvent(self)
-            if event.type == SubspaceCoreStack.EVENT_GAME_PACKET_RECEIVED:
+            event = CoreStack.wait_for_event(self)
+            if event.type == core_stack.EVENT_GAME_PACKET_RECEIVED:
                 try:
                     game_type, = struct.unpack_from("<B", event.packet)
                     handler = self.__packet_handlers.get(game_type, None)
@@ -2925,10 +2926,10 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
                             self.__log(CRITICAL, l)
 
             # map core stack events to game stack events
-            elif event.type == SubspaceCoreStack.EVENT_TICK:
-                self.__addPendingEvent(GameEvent(EVENT_TICK))
-            elif event.type == SubspaceCoreStack.EVENT_DISCONNECT:
-                self.__addPendingEvent(GameEvent(EVENT_DISCONNECT))
+            elif event.type == core_stack.EVENT_TICK:
+                self.__add_pending_event(GameEvent(EVENT_TICK))
+            elif event.type == core_stack.EVENT_DISCONNECT:
+                self.__add_pending_event(GameEvent(EVENT_DISCONNECT))
 
-    def __addPendingEvent(self, game_event):
+    def __add_pending_event(self, game_event):
         self.__event_list.append(game_event)

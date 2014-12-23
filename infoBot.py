@@ -130,13 +130,13 @@ class Bot(BotInterface):
 
         if event.type == EVENT_MESSAGE:
             # returns true when all the lines of info are parsed
-            if self.info.Parse(event.message):
+            if self.info.parse(event.message):
                 pi = self.pman.GetPlayerInfo(self.info.id.name)
                 # self.logger.debug( self.info.id.name + " parsed")
                 pi.info = copy.deepcopy(self.info)
                 self.ProcessInfo(ssbot, self.info)
                 ssbot.sendModuleEvent(__name__, "InfoParsed", pi.info)
-                self.info.Clear()
+                self.info.clear()
 
         if event.type == EVENT_TICK and time.time() - self.ticks >= \
                 self.Check_interval:

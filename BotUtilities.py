@@ -158,11 +158,11 @@ def botMain(Bot, debug=False, isMaster=False, arena="#python"):
                         logging.getLogger(__name__))
         bot = Bot(ssbot, md)
 
-        ssbot.connectToServer(
-            '66.235.184.102', 7900, botname, botpassword, arena)
+        ssbot.connect_to_server(
+            '66.36.247.83', 7900, botname, botpassword, arena)
 
         while ssbot.isConnected():
-            event = ssbot.waitForEvent()
+            event = ssbot.wait_for_event()
             bot.HandleEvents(ssbot, event)
     except Exception as e:
         LogException(logger)
