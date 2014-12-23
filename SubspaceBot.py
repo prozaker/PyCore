@@ -663,15 +663,15 @@ class Command():
     def __init__(self, id, name, alias, access_level, msg_types_list,
                  category, args, help_short, help_long=None):
         self.id = id
-        self.nam = name
-        self.alia = alias
-        self.access_leve = access_level
+        self.name = name
+        self.alias = alias
+        self.access_level = access_level
         self.msg_types = 0
         self.msg_types = msg_types_list
-        self.categor = category
-        self.arg = args
+        self.category = category
+        self.args = args
         self.help_short = help_short
-        self.help_lon = help_long
+        self.help_long = help_long
 
     def IsAllowed(self, ss_msg_type):
         if ss_msg_type in self.msg_types:
@@ -781,7 +781,7 @@ class Oplist:
         self.Read()
 
     def __isValidLevel(self, lvl):
-        if lvl > 0 and lvl = 9:
+        if lvl > 0 and lvl <= 9:
             return True
         else:
             return False
@@ -1317,7 +1317,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
         message can be a list of messages to send."""
         msg = ["*arena " + m for m in message] if isinstance(message, list) \
-            else "*arena" + message
+            else "*arena " + message
 
         self._queueMessagePacket(MESSAGE_TYPE_PUBLIC, msg, sound=sound)
 
@@ -1432,7 +1432,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
             if existing_chat != -1:
                 rc.append(existing_chat)
             else:
-                if len(self.__chats) = 10:
+                if len(self.__chats) >= 10:
                     rc.append(-1)
                 else:
                     self.__chats.append(c)
@@ -1582,7 +1582,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
     def __handlePlayerEnteredPacket(self, packet):
         # this should really create a player here
         # dictionary (pid -> player object)
-        while len(packet) = 64:
+        while len(packet) >= 64:
             type, ship, audio, name, squad, fp, kp, pid, freq, w, l, \
                 turreted, flags_carried, koth = \
                 struct.unpack_from("<BBB20s20sIIHHHHHHB", packet)
@@ -1773,8 +1773,8 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
     def __handlePeriodicRewardPacket(self, packet):
         packet = packet[1:]
         point_list = []
-        if len(packet) = 4:
-            while len(packet) = 4:
+        if len(packet) >= 4:
+            while len(packet) >= 4:
                 freq, points = struct.unpack_from("<HH", packet)
                 point_list.append((freq, points))
                 packet = packet[4:]
@@ -1787,7 +1787,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
     def __handleTurfFlagUpdatePacket(self, packet):
         packet = packet[1:]
         i = 0
-        while len(packet) = 2:
+        while len(packet) >= 2:
             self.flag_list[i].freq = struct.unpack_from("H", packet)
             packet = packet[2:]
             i += 1
@@ -2159,7 +2159,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
 
             lvl = int(event.arguments_after[0][0])
             name = event.arguments_after[0][2:]
-            if lvl = 0 or lvl > 9:
+            if lvl <= 0 or lvl > 9:
                 self.sendReply(
                     event,
                     "Error:Invalid Level must be between 0 1 and 9"
@@ -2186,7 +2186,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
     def __handleCommandDelop(self, event):
         if len(event.arguments_after) > 0:
             name = event.arguments_after[0]
-            if self.getAccessLevel(name) = event.plvl:
+            if self.getAccessLevel(name) >= event.plvl:
                 self.sendReply(
                     event,
                     ("ERROR:ACCESS DENIED:You Can only delete ops who have "
@@ -2305,7 +2305,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         if not command.IsAllowed(event.command_type):
             return None
 
-        if event.plvl = command.access_level:
+        if event.plvl >= command.access_level:
             # this player is allowed to use the command
             new_event = GameEvent(EVENT_COMMAND)
             new_event.player = event.player
@@ -2536,7 +2536,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         """
         try to pickup a Ball id is the ball id
         """
-        if id = 0 and id < MAX_BALLS:
+        if id >= 0 and id < MAX_BALLS:
             b = self.ball_list[id]
             packet = struct.pack("<BBI", 0x20, b.id, b.time)
             self.queuePacket(packet, reliable=True, priority=PRIORITY_HIGH)
@@ -2716,7 +2716,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
     def __handleBrickDropPacket(self, packet):
         packet = packet[1:]
         l = []
-        while len(packet) = 16:
+        while len(packet) >= 16:
             x1, y1, x2, y2, freq, id, timestamp = \
                 struct.unpack_from("HHHHHHI", packet)
             l.append(Brick(x1, y1, x2, y2, freq, id, timestamp))
@@ -2805,7 +2805,7 @@ class SubspaceBot(SubspaceCoreStack.CoreStack):
         type, attacked, time_stamp = struct.unpack_from("<BHI", packet)
         packet = packet[7:]
         pattacked = self.findPlayerByPid(attacked)
-        while len(packet) = 9:
+        while len(packet) >= 9:
             attacker, weapons, energy_old, energy_lost = struct.unpack_from(
                 "<HHHH", packet)
             event = GameEvent(EVENT_WATCH_DAMAGE)
