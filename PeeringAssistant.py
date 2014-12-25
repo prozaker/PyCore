@@ -13,8 +13,9 @@ or ?go to anyother peered arena it will work.
 from sets import Set
 
 from SubspaceBot import *
-from BotUtilities import *
 import TimerManager
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -51,7 +52,7 @@ class Bot(BotInterface):
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(20, 1)
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         # whatever events your bot needs to respond to add code here to do it
         if event.type == EVENT_LOGIN:
             ssbot.sendPublicMessage("?Arena")
@@ -112,10 +113,10 @@ class Bot(BotInterface):
 
                 v[1].clear()  # set new list to Non
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
 
 if __name__ == '__main__':
-    botMain(Bot)
+    bot_main(Bot)

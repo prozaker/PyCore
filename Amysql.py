@@ -9,7 +9,7 @@ from collections import deque
 
 import MySQLdb
 
-import BotUtilities
+from subspace_bot.utilities.messaging import SSmessenger
 
 
 class AElement:
@@ -102,26 +102,26 @@ class AResult(AElement):
         This function will print any result nicely on screen with proper
         formatting
         """
-        ss = BotUtilities.SSmessenger(ssbot, mtype, target)
+        ss = SSmessenger(ssbot, mtype, target)
         if fail_only:
             if self.error_msg:
-                ss.sendMessage("Error: " + str(self.query.text))
-                ss.sendMessage("Error: " + str(self.error_msg))
+                ss.send_message("Error: " + str(self.query.text))
+                ss.send_message("Error: " + str(self.error_msg))
         elif self.rows is None or len(self.rows) == 0:
             if self.rows_affected:
-                ss.sendMessage("RowsAffected: " + str(self.rows_affected))
+                ss.send_message("RowsAffected: " + str(self.rows_affected))
             if self.last_row_id:
-                ss.sendMessage("InsertId: " + str(self.last_row_id))
+                ss.send_message("InsertId: " + str(self.last_row_id))
             if self.error_msg:
-                ss.sendMessage("Error: " + str(self.error_msg))
+                ss.send_message("Error: " + str(self.error_msg))
             else:
-                ss.sendMessage("Query Successful: No Results")
+                ss.send_message("Query Successful: No Results")
             if self.messages:
                 for m in self.messages:
-                    ss.sendMessage("Messages: " + str(m))
+                    ss.send_message("Messages: " + str(m))
         else:
             if not self.description:
-                ss.sendMessage("#### NO RESULTS ###")
+                ss.send_message("#### NO RESULTS ###")
             else:
                 names = []
                 lengths = []
@@ -138,13 +138,13 @@ class AResult(AElement):
                 fm = "|"
                 for col in lengths:  # make the format string
                     fm += " %" + str(col) + "s |"
-                ss.sendMessage(tb)
-                ss.sendMessage((fm % tuple(names)))
-                ss.sendMessage(tb)
+                ss.send_message(tb)
+                ss.send_message((fm % tuple(names)))
+                ss.send_message(tb)
 
                 for row in self.rows:  # output the rows
-                    ss.sendMessage((fm % row))
-                ss.sendMessage(tb)
+                    ss.send_message((fm % row))
+                ss.send_message(tb)
 
 
 class Amysql(threading.Thread):

@@ -8,6 +8,11 @@ from SubspaceBot import *
 
 import TimerManager
 from Amysql import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.messaging import SSmessenger, LoggingPublicHandler
+from subspace_bot.utilities.logging import LogException, LoggingPublicHandler
+from subspace_bot.utilities.module import LoggingPublicHandler
 
 
 """
@@ -132,7 +137,7 @@ class Bot(BotInterface):
         self.timer_man.set(30, self.TID_PARSE_STATS)
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingPublicHandler(logging.DEBUG, bot, "*bot")
+        handler = LoggingPublicHandler(logging.DEBUG, bot, "*bot")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         # gayness because of master bot doesnt auto load all the other
@@ -171,13 +176,13 @@ class Bot(BotInterface):
         this function will print any result nicely on screen
         with proper formatting
         """
-        ss = BotUtilities.SSmessenger(ssbot, mtype, target)
+        ss = SSmessenger(ssbot, mtype, target)
         if res.rows is None or len(res.rows) == 0:
             if res.error_msg:
-                ss.sendMessage("Error: " + str(res.error_msg))
+                ss.send_message("Error: " + str(res.error_msg))
         else:
             if not res.description:
-                ss.sendMessage("#### NO RESULTS ###")
+                ss.send_message("#### NO RESULTS ###")
             else:
                 min = 9999
                 max = 0
@@ -205,12 +210,12 @@ class Bot(BotInterface):
                         if i < min:
                             break
                     if data_points:
-                        ss.sendMessage(txt)
-                ss.sendMessage("000|" + "-" * len(res.rows))
-                ss.sendMessage("Max:%3i Min:%3i Avg:%3.2f" %
+                        ss.send_message(txt)
+                ss.send_message("000|" + "-" * len(res.rows))
+                ss.send_message("Max:%3i Min:%3i Avg:%3.2f" %
                                (max, min, total/count))
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
 
         if event.type == EVENT_COMMAND:
             if event.command.id == self.CID_SPG:
@@ -353,9 +358,9 @@ class Bot(BotInterface):
                 r.GenericResultPrettyPrinter(
                     ssbot, r.query.data[1], r.query.data[2], True)
 
-    def Cleanup(self):
+    def cleanup(self):
         self._db.cleanUp()
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True)
+    bot_main(Bot, False, True)

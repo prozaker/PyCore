@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import subprocess
+
 from SubspaceBot import *
 from BotUtilities import *
-import subprocess
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -57,7 +60,7 @@ class Bot(BotInterface):
         # return False
         #
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id == self.cmd_id_kb:
                 if len(event.arguments) > 0:
@@ -102,7 +105,7 @@ class Bot(BotInterface):
         if (event.type == EVENT_LEAVE and event.player == self.log_player):
             self.log_player = None
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -111,4 +114,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot, False, True, "#master")
+    bot_main(Bot, False, True, "#master")

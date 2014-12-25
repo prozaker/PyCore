@@ -1,17 +1,27 @@
 '''
 @author: The Junky <thejunky@gmail.com>
 '''
-
+import sys
+import os
+from collections import deque
 import logging
 from optparse import OptionParser
 import copy
+import threading
+import time
 
-from SubspaceBot import *
-from BotUtilities import *
 from BotConfig import GlobalConfiguration
 import BotInstance
+from subspace_bot.objects.bot import SubspaceBot
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.logging import LogException, ListHandler, \
+    NullHandler
+from subspace_bot.utilities.module import ModuleData, load_bot
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.events import *
 
-
+# TODO: bots should run stand alone, in separate processes
+# TODO: get rid of threading
 class Bot(BotInterface):
     def __init__(self, ssbot, md, config, MQueue):
         BotInterface.__init__(self, ssbot, md)
@@ -97,7 +107,7 @@ class Bot(BotInterface):
         formatter = logging.Formatter(
             '%(asctime)s:%(name)s:%(levelname)s:%(message)s')
         self.listhandler.setFormatter(formatter)
-        self.listhandler.LoadFromFile(os.path.join(os.getcwd(), "Bots.log"))
+        self.listhandler.load_from_file(os.path.join(os.getcwd(), "Bots.log"))
         self.logger.addHandler(self.listhandler)
 
         self.logger.info("Master Bot Started")
@@ -280,10 +290,10 @@ class Bot(BotInterface):
 
     def HCLog(self, ssbot, event):
         if len(event.arguments) > 0 and event.arguments[0].lower() == "-clear":
-            self.listhandler.Clear()
+            self.listhandler.clear()
             ssbot.sendReply(event, "on screen log cleared")
         else:
-            for r in self.listhandler.GetEntries():
+            for r in self.listhandler.get_entries():
                 ssbot.sendReply(event, r)
 
     def HCLoadConfig(self, ssbot, event):
@@ -296,7 +306,7 @@ class Bot(BotInterface):
             self.config = oc
             ssbot.sendReply(event, "failure, still using old configuration")
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND and event.command.id in \
                 self._cmd_handlers:
             self._cmd_handlers[event.command.id](ssbot, event)
@@ -332,7 +342,7 @@ class Bot(BotInterface):
                             "autospawn:all %s in use" % t[0])
                 elif event.user_data[0] == 2:  # do maintenance
                     self.DeleteInactiveBots()
-                    self.listhandler.RemoveOld()
+                    self.listhandler.remove_old()
                     ssbot.setTimer(10, (2, None))
 
     def SendBroadcastsToAttachedBots(self, ssbot):
@@ -347,7 +357,7 @@ class Bot(BotInterface):
                     # will return None if there are none
                     b = self.__queue.dequeue()
 
-    def Cleanup(self):
+    def cleanup(self):
         for v in self._instances.values():
             v.RequestStop()
 
@@ -406,7 +416,7 @@ def MasterMain():
 
         (options, args) = parser.parse_args()
 
-        Queue = MasterQue()
+        Queue = MasterQueue()
         ssbot = SubspaceBot(
             False, True, Queue, logging.getLogger("ML.Master.Core"))
         ssbot.setBotInfo(
@@ -438,7 +448,7 @@ def MasterMain():
         # load any bots that are specified in the config
         bot = None
         for m in config.Modules:
-            bot = LoadBot(
+            bot = load_bot(
                 ssbot,
                 m[0],
                 m[1],
@@ -460,7 +470,7 @@ def MasterMain():
                     wait_time = 0
                     event = ssbot.wait_for_event()
                     for b in BotList:
-                        b.HandleEvents(ssbot, event)
+                        b.handle_events(ssbot, event)
             logger.critical("Master disconnected")
             if ssbot.should_reconnect():
                 ssbot.reset_state()
@@ -488,7 +498,7 @@ def MasterMain():
         master.StopAllBots()
         logger.critical("Requested Stop for all active bots...")
         for b in BotList:
-            b.Cleanup()
+            b.cleanup()
         logger.critical("Master Bot behaviors cleansed")
         filehandler.close()
         sys.exit(1)
@@ -508,3 +518,33 @@ if __name__ == '__main__':
         pass
     else:
         MasterMain()
+
+
+class MasterQueue():
+    def __init__(self):
+        self.__queue = deque()
+        self.__lock = threading.Lock()
+
+    def queue(self, event):
+        self.__lock.acquire()
+        self.__queue.append(event)
+        self.__lock.release()
+
+    def dequeue(self):
+        q = None
+        self.__lock.acquire()
+        if len(self.__queue) > 0:
+            q = self.__queue.pop()
+        self.__lock.release()
+        return q
+
+    def size(self):
+        return len(self.__queue)
+
+
+class ShutDownException(Exception):
+    def __init__(self, value):
+        self.parameter = value
+
+    def __str__(self):
+        return repr(self.parameter)

@@ -4,8 +4,9 @@
 
 from random import randrange
 
-from BotUtilities import *
 from SubspaceBot import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -31,7 +32,7 @@ class Bot(BotInterface):
             ): self.roll,
         }
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id in self.__command_handlers_dict:
                 self.__command_handlers_dict[event.command.id](ssbot, event)
@@ -43,4 +44,4 @@ class Bot(BotInterface):
 
 
 if __name__ == '__main__':
-    botMain(Bot)
+    bot_main(Bot)

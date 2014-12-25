@@ -1,6 +1,7 @@
 from SubspaceBot import *
-from BotUtilities import *
 import TimerManager
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Tier():
@@ -118,7 +119,7 @@ class Bot(BotInterface):
                     self.current = t
                 break
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_LOGIN:
             self.tm.set(5, 1)  # first check 5 secs after login
         elif event.type == EVENT_COMMAND:
@@ -143,7 +144,7 @@ class Bot(BotInterface):
                     self.doTransition(ssbot)
                     self.tm.set(5*60, 1)
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -151,4 +152,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot, False, False, "# master")
+    bot_main(Bot, False, False, "# master")

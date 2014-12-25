@@ -3,6 +3,10 @@
 '''
 from SubspaceBot import *
 from BotUtilities import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.graphics import tiles_to_ss_coords, \
+    tiles_to_ss_area
 
 
 class Bot(BotInterface):
@@ -70,7 +74,7 @@ class Bot(BotInterface):
         self.flist = []
         self.fc = 0
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         # whatever events your bot needs to respond to add code here to do it
         if event.type == EVENT_LOGIN:
             ssbot.sendPublicMessage("?get flag:maxflags")
@@ -113,8 +117,8 @@ class Bot(BotInterface):
             if f.x != 0xFFFF:
                 ssbot.sendReply(event, "(%d:%d, %d)-%s-%s owned by freq:%d" % (
                     f.id, f.x, f.y,
-                    Tiles_To_SS_Coords(f.x, f.y),
-                    Tiles_To_SS_Area(f.x, f.y),
+                    tiles_to_ss_coords(f.x, f.y),
+                    tiles_to_ss_area(f.x, f.y),
                     f.freq))
         ssbot.sendPublicMessage("?alert %s used !listflags" % (
             event.player.name))
@@ -211,7 +215,7 @@ class Bot(BotInterface):
         ssbot.sendChangeArena(event.arguments[0] if
                               len(event.arguments) > 0 else "99")
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -220,4 +224,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot, False, True, "0")
+    bot_main(Bot, False, True, "0")

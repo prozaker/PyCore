@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from SubspaceBot import *
-from BotUtilities import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -34,7 +35,7 @@ class Bot(BotInterface):
         # do any other initialization code here
         # ...
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         # whatever events your bot needs to respond to add code here to do it
         if event.type == EVENT_LOGIN:
             pass
@@ -53,7 +54,7 @@ class Bot(BotInterface):
     def cmdWTF(self, ssbot, event):
         ssbot.sendReply(event, "wtf")
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -62,4 +63,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot)
+    bot_main(Bot)

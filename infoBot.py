@@ -4,10 +4,10 @@
 import copy
 import ConfigParser
 
-from BotUtilities import *
 from SubspaceBot import *
 from PlayerInfo import PlayerInfoBase, PlayerInfoManager
 from SSParsers import *
+from subspace_bot.interface import BotInterface
 
 
 class Mode():
@@ -123,7 +123,7 @@ class Bot(BotInterface):
         self.mode = self.module.Mode()
         self.ticks = time.time()
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id in self.__command_handlers_dict:
                 self.__command_handlers_dict[event.command.id](ssbot, event)

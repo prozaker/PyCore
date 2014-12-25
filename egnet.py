@@ -8,6 +8,9 @@ from SubspaceBot import *
 
 import TimerManager
 from Amysql import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.logging import LoggingRemoteHandler
 
 
 class Bot(BotInterface):
@@ -40,7 +43,7 @@ class Bot(BotInterface):
         self.chat = bot.addChat("st4ff")
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingRemoteHandler(logging.DEBUG, bot, "Ratio")
+        handler = LoggingRemoteHandler(logging.DEBUG, bot, "Ratio")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
@@ -67,7 +70,7 @@ class Bot(BotInterface):
 
         return (mtype, target)
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
 
         if event.type == EVENT_COMMAND:
             if event.command.id in [
@@ -108,9 +111,9 @@ class Bot(BotInterface):
             r.GenericResultPrettyPrinter(
                 ssbot, r.query.data[0], r.query.data[1])
 
-    def Cleanup(self):
+    def cleanup(self):
         pass
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True, "#master")
+    bot_main(Bot, False, True, "#master")

@@ -8,7 +8,8 @@ from threading import Thread
 
 from SubspaceBot import *
 from BotUtilities import *
-import logging
+from subspace_bot.utilities.logging import LogException
+from subspace_bot.utilities.module import load_bot
 
 
 class BotInstance(Thread):
@@ -53,7 +54,7 @@ class BotInstance(Thread):
             ssbot.arena = self.arena  # serexl's bots look at arena in init
             bot = None
             for m in self.modules:
-                bot = LoadBot(
+                bot = load_bot(
                     ssbot,
                     m[0],
                     m[1],
@@ -77,7 +78,7 @@ class BotInstance(Thread):
                         retry = 0
                         event = ssbot.wait_for_event()
                         for b in BotList:
-                            b.HandleEvents(ssbot, event)
+                            b.handle_events(ssbot, event)
                 if ssbot.should_reconnect() and retry < 6:
                     self.logger.debug("Disconnected...")
                     ssbot.reset_state()
@@ -93,4 +94,4 @@ class BotInstance(Thread):
             if ssbot.isConnected():
                 ssbot.disconnect_from_server()
             for b in BotList:
-                b.Cleanup()
+                b.cleanup()

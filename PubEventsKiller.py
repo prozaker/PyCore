@@ -1,6 +1,7 @@
 from SubspaceBot import *
-from BotUtilities import *
 import TimerManager
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -21,7 +22,7 @@ class Bot(BotInterface):
         }
         pass
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_TICK:
             timer_expired = self.tm.getExpired()
             if timer_expired:
@@ -46,8 +47,8 @@ class Bot(BotInterface):
             if event.pname in self.bots_to_check:
                 self.bots_to_check[event.pname] = True
 
-    def Cleanup(self):
+    def cleanup(self):
         pass
 
 if __name__ == '__main__':
-    botMain(Bot, False, False, "99")
+    bot_main(Bot, False, False, "99")

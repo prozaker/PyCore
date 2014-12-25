@@ -1,6 +1,6 @@
 import twitter
-from BotUtilities import *
 from SubspaceBot import *
+from subspace_bot.interface import BotInterface
 
 
 class Bot(BotInterface):
@@ -24,7 +24,7 @@ class Bot(BotInterface):
             'update status on twitter.com/extreme_games'
         )
 
-    def HandleEvents(self, bot, event):
+    def handle_events(self, bot, event):
         if event.type == EVENT_COMMAND and \
                 event.command.id == self._tweet_command_id:
             if self.oplist.GetAccessLevel(event.player.name) > 0:
@@ -44,5 +44,5 @@ class Bot(BotInterface):
             else:
                 bot.sendPrivateMessage(event.player.name, "access denied")
 
-    def Cleanup(self):
+    def cleanup(self):
         pass
