@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 
-from SubspaceBot import *
-from BotUtilities import *
 import subprocess
+import time
 
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.events import *
+from subspace_bot.constants.messages import *
 
 class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
         # register Your Module
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "processbot",
             "The Junky",
@@ -17,7 +21,7 @@ class Bot(BotInterface):
             ".01"
         )
         # register your commands
-        self.cmd_id_kb = ssbot.registerCommand(
+        self.cmd_id_kb = ssbot.register_command(
             '!killbot',  # command
             "!kb",  # alias can be None if no alias
             1,  # min access level to use this command
@@ -25,7 +29,7 @@ class Bot(BotInterface):
             "smods",  # category this command belongs to
             "",  # what args if any this command accepts use "" if none
             "*******")  # short description of the command displayed in help
-        self.cmd_id_lkb = ssbot.registerCommand(
+        self.cmd_id_lkb = ssbot.register_command(
             '!listbots',  # command
             "!lk",  # alias can be None if no alias
             1,  # min access level to use this command
@@ -57,36 +61,36 @@ class Bot(BotInterface):
         # return False
         #
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id == self.cmd_id_kb:
                 if len(event.arguments) > 0:
                     bot = self.killable_bots.get(event.arguments[0], None)
                     if bot:
                         if event.plvl >= bot[0]:
-                            ssbot.sendPrivateMessage(event.player, "ok")
+                            ssbot.send_private_message(event.player, "ok")
                             f = self.killProcess(bot[1])
                             # for l in f :
-                            ssbot.sendPrivateMessage(event.player, f[0])
-                            ssbot.sendPublicMessage("?alert %s killed %s" % (
+                            ssbot.send_private_message(event.player, f[0])
+                            ssbot.send_public_message("?alert %s killed %s" % (
                                 event.pname, event.arguments[0]))
                         else:
-                            ssbot.sendPrivateMessage(
+                            ssbot.send_private_message(
                                 event.player,
                                 ("Access Denied min level to kill that "
                                  "bot is %s") % str(bot[0])
                             )
                     else:
-                        ssbot.sendPrivateMessage(
+                        ssbot.send_private_message(
                             event.player,
                             "bot not found in killable process list %s" %
                             event.arguments[0]
                         )
 
             if event.command.id == self.cmd_id_lkb:
-                ssbot.sendPrivateMessage(event.player, "--Killable bots--")
+                ssbot.send_private_message(event.player, "--Killable bots--")
                 for key, value in self.killable_bots.iteritems():
-                    ssbot.sendPrivateMessage(
+                    ssbot.send_private_message(
                         event.player, key + " -- " + str(value))
 
         if (event.type == EVENT_MESSAGE and
@@ -94,7 +98,7 @@ class Bot(BotInterface):
                 self.log_player is not None):
             m = event.message
             if m.startswith(("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")):
-                ssbot.sendPrivateMessage(self.log_player, m)
+                ssbot.send_private_message(self.log_player, m)
         if (event.type == EVENT_TICK and
                 self.log_player is not None and
                 self.log_time >= time.time()):
@@ -102,7 +106,7 @@ class Bot(BotInterface):
         if (event.type == EVENT_LEAVE and event.player == self.log_player):
             self.log_player = None
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -111,4 +115,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot, False, True, "#master")
+    bot_main(Bot, False, True, "#master")

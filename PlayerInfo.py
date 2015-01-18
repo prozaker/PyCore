@@ -1,6 +1,5 @@
 import time
-from SubspaceBot import EVENT_ENTER, EVENT_LEAVE, EVENT_TICK, EVENT_DISCONNECT
-
+from subspace_bot.constants.events import *
 
 class PlayerInfoBase:
     def __init__(self):

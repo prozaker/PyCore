@@ -1,18 +1,22 @@
-'''
+"""
 @author: The Junky
 
-'''
+"""
 
-from BotUtilities import *
-from SubspaceBot import *
 import TimerManager
 from Amysql import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.loggers import LoggingRemoteHandler
+from subspace_bot.constants.events import *
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
 
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "stats",
             "The Junky",
@@ -26,27 +30,27 @@ class Bot(BotInterface):
         # self.clist = [COMMAND_TYPE_PUBLIC, COMMAND_TYPE_TEAM,
         #   COMMAND_TYPE_FREQ, COMMAND_TYPE_PRIVATE, COMMAND_TYPE_CHAT]
         self.clist = [COMMAND_TYPE_PRIVATE]
-        # self._sql_command_id = bot.registerCommand(
+        # self._sql_command_id = bot.register_command(
         #   '!sql', None, 9, self.clist, "web", "[query]", 'sql it zz')
-        # self._sqlnl_command_id = bot.registerCommand(
+        # self._sqlnl_command_id = bot.register_command(
         #   '!sqlnl', None, 9, self.clist, "web", "[query]", 'sql it zz')
-        self._last_jp = bot.registerCommand(
+        self._last_jp = bot.register_command(
             '!jackpots', None, 0, self.clist, "Stats", "", 'last jackpots won')
-        self._recs = bot.registerCommand(
+        self._recs = bot.register_command(
             '!recs', None, 0, self.clist, "Stats", "[reset id]", 'top ratios')
-        self._points = bot.registerCommand(
+        self._points = bot.register_command(
             '!points', None, 0, self.clist, "Stats", "[reset id]",
             'Top points')
-        self._squads = bot.registerCommand(
+        self._squads = bot.register_command(
             '!squads', None, 0, self.clist, "Stats", "[reset id]",
             'top squads')
-        self._resets = bot.registerCommand(
+        self._resets = bot.register_command(
             '!resets', None, 0, self.clist, "Stats", "", 'recentreset ids')
         self.level = logging.DEBUG
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(.01, 1)
         self.timer_man.set(300, 2)
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
         self.cache = {
             # !cmd: (Cached_result, time)
             "!jackpots": (None, 0, "jackpots.txt"),
@@ -56,7 +60,7 @@ class Bot(BotInterface):
         }
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingRemoteHandler(logging.DEBUG, bot, "Ratio")
+        handler = LoggingRemoteHandler(logging.DEBUG, bot, "Ratio")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
@@ -94,7 +98,7 @@ class Bot(BotInterface):
                 return None
             return None
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
 
         if event.type == EVENT_COMMAND:
             # if event.command.id in [
@@ -104,7 +108,7 @@ class Bot(BotInterface):
             #         limit = " limit 100"
             #     else:
             #         limit = ""
-            #     mt = self.getMessageTuple(event)
+            #     mt = self.get_message_tuple(event)
             #     db = self._db
             #     db.query(event.arguments_after[0] + limit, None, mt)
             if event.command.id == self._last_jp:
@@ -271,13 +275,13 @@ class Bot(BotInterface):
         else:
             # if r.query.data[2] in self.cache:
             #     self.cache[r.query.data[2]] = (
-            #       copy.copy(r), GetTickCountHs())
+            #       copy.copy(r), get_tick_count_hs())
             r.GenericResultPrettyPrinter(
                 ssbot, r.query.data[0], r.query.data[1])
 
-    def Cleanup(self):
+    def cleanup(self):
         self._db.CleanUp()
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True, "-")
+    bot_main(Bot, False, True, "-")

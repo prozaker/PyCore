@@ -1,8 +1,8 @@
-'''
+"""
 Created on Aug 11, 2010
 
 @author: The Junky
-'''
+"""
 
 import time
 
@@ -91,8 +91,8 @@ class TimerManager(object):
 #         self.__timer_dict = {}
 #         self.__ssbot = ssbot
 #
-#     def setTimer(self, secs, data):
-#         id = self.ssbot.setTimer(secs, None)
+#     def set_timer(self, secs, data):
+#         id = self.ssbot.set_timer(secs, None)
 #         self.__timer_dict[id]= data
 #         return id
 #
@@ -109,11 +109,11 @@ class TimerManager(object):
 #         else:
 #             return None
 #
-#     def deleteTimer(self, id):
-#         self.__ssbot.deleteTimer(id)
+#     def delete_timer(self, id):
+#         self.__ssbot.delete_timer(id)
 #         del self.__timer_dict[id]
 #
 #     def deleteAllTimers(self):
 #         for k in self.__timer_dict.keys():
-#             self.__ssbot.deleteTimer(k)
+#             self.__ssbot.delete_timer(k)
 #         self.__timer_dict.clear()

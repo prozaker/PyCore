@@ -1,21 +1,31 @@
 '''
 @author: The Junky <thejunky@gmail.com>
 '''
-
+import sys
+import os
+from collections import deque
 import logging
 from optparse import OptionParser
 import copy
+import threading
+import time
 
-from SubspaceBot import *
-from BotUtilities import *
 from BotConfig import GlobalConfiguration
 import BotInstance
+from subspace_bot.objects.bot import SubspaceBot
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.loggers import log_exception, ListHandler, \
+    NullHandler
+from subspace_bot.utilities.module import ModuleData, load_bot
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.events import *
 
-
+# TODO: bots should run stand alone, in separate processes
+# TODO: get rid of threading
 class Bot(BotInterface):
     def __init__(self, ssbot, md, config, MQueue):
         BotInterface.__init__(self, ssbot, md)
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "MasterBot",
             "The Junky",
@@ -25,7 +35,7 @@ class Bot(BotInterface):
         self.config = config
         self._cmd_handlers = {
             # Cmd_ID, cmd_handler_func
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!startbot',
                 "!sb",
                 2,
@@ -34,7 +44,7 @@ class Bot(BotInterface):
                 "[type] [arena]",
                 '!startbot type arena'
             ): self.HCStartBot,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!killbot',
                 "!kb",
                 2,
@@ -43,7 +53,7 @@ class Bot(BotInterface):
                 "[name]",
                 'Stop a specific bot'
             ): self.HCStopBot,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!listbots',
                 "!lb",
                 2,
@@ -52,7 +62,7 @@ class Bot(BotInterface):
                 "",
                 'lists all currently running bots'
             ): self.HCListBots,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!listbottypes',
                 "!lt",
                 2,
@@ -61,7 +71,7 @@ class Bot(BotInterface):
                 "",
                 '!lists all bot types currently defined in config file'
             ): self.HCListBotTypes,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!reloadconf',
                 "!rc",
                 3,
@@ -70,7 +80,7 @@ class Bot(BotInterface):
                 "",
                 'reload json config file'
             ): self.HCLoadConfig,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!unloadmodule',
                 "!um",
                 7,
@@ -79,7 +89,7 @@ class Bot(BotInterface):
                 "[modulename]",
                 'unload a specific module from systems.module'
             ): self.HCUnloadModule,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!log',
                 None,
                 2,
@@ -97,12 +107,12 @@ class Bot(BotInterface):
         formatter = logging.Formatter(
             '%(asctime)s:%(name)s:%(levelname)s:%(message)s')
         self.listhandler.setFormatter(formatter)
-        self.listhandler.LoadFromFile(os.path.join(os.getcwd(), "Bots.log"))
+        self.listhandler.load_from_file(os.path.join(os.getcwd(), "Bots.log"))
         self.logger.addHandler(self.listhandler)
 
         self.logger.info("Master Bot Started")
         if len(config.MasterChats) > 0:
-            ssbot.addChat(config.MasterChats)
+            ssbot.add_chat(config.MasterChats)
 
         self.__queue = MQueue
 
@@ -144,8 +154,8 @@ class Bot(BotInterface):
     def HCShutdown(self, ssbot, event):
         self.StopAllBots()
         ssbot.reconnect = False
-        ssbot.disconnectFromServer()
-        ssbot.sendReply(event, "ok")
+        ssbot.disconnect_from_server()
+        ssbot.send_reply(event, "ok")
         self.logger.critical("Master is being Shutdown command issued by: %s" %
                              event.pname)
         # raise ShutDownException(
@@ -197,60 +207,60 @@ class Bot(BotInterface):
             args = event.arguments_after[2] if len(event.arguments) > 2 else ""
             r = self.StartBot(ssbot, event.pname, btype, arena, args)
             if r == 1:
-                ssbot.sendReply(event, "ok")
+                ssbot.send_reply(event, "ok")
             elif r == -1:
-                ssbot.sendReply(event, "Error:type(%s) not found" % (type))
+                ssbot.send_reply(event, "Error:type(%s) not found" % (type))
             elif r == -2:
-                ssbot.sendReply(event, "all %s in use" % (type))
+                ssbot.send_reply(event, "all %s in use" % (type))
         else:
-            ssbot.sendReply(event, "Usage: !startbot type arena")
+            ssbot.send_reply(event, "Usage: !startbot type arena")
 
     def HCStopBot(self, ssbot, event):
         if (len(event.arguments) == 1 and
                 event.arguments[0].lower() in self._instances):
             b = self._instances[event.arguments[0].lower()]
             b.RequestStop()
-            ssbot.sendReply(event, "Stop Requested")
+            ssbot.send_reply(event, "Stop Requested")
             self.logger.info("%s killed %s (Stop Requested)",
                              event.pname, event.arguments[0])
         else:
-            ssbot.sendReply(event, "Bot Not Found")
+            ssbot.send_reply(event, "Bot Not Found")
 
     def HCListBots(self, ssbot, event):
         c = 0
         for v in self._instances.values():
-            ssbot.sendReply(
+            ssbot.send_reply(
                 event,
                 "ID:%3i Type:%6s Name:%20s Arena:%10s alive:%i" %
                 (v.id, v.type, v.bname, v.arena, v.is_alive())
             )
             c += 1
         if c == 0:
-            ssbot.sendReply(event, "No Active Bots")
+            ssbot.send_reply(event, "No Active Bots")
 
     def HCListBotTypes(self, ssbot, event):
         if len(event.arguments) == 1:
             b = self.config.Bots.get(event.arguments[0].lower(), None)
             if b:
-                ssbot.sendReply(event, "Type: " + b.Type)
-                ssbot.sendReply(event, "Description: " + b.Description)
-                ssbot.sendReply(event, "BotBaseName: " + b.Name)
-                ssbot.sendReply(event, "TotalBots: " + str(b.MaxBots))
-                ssbot.sendReply(event, "ConfigFile: " + b.ConfigurationFile)
+                ssbot.send_reply(event, "Type: " + b.Type)
+                ssbot.send_reply(event, "Description: " + b.Description)
+                ssbot.send_reply(event, "BotBaseName: " + b.Name)
+                ssbot.send_reply(event, "TotalBots: " + str(b.MaxBots))
+                ssbot.send_reply(event, "ConfigFile: " + b.ConfigurationFile)
                 txt = ""
                 c = 0
-                ssbot.sendReply(event, "-" * 10 + "Modules" + "-" * 10)
+                ssbot.send_reply(event, "-" * 10 + "Modules" + "-" * 10)
                 for b in b.Modules:
                     if c != 0 and c % 2 == 0:
-                        ssbot.sendReply(event, "Modules:" + txt[1:])
+                        ssbot.send_reply(event, "Modules:" + txt[1:])
                         txt = ""
                     txt += ", " + b[0]
                     c += 1
 
                 if len(txt) > 0:
-                    ssbot.sendReply(event, "Modules:" + txt[1:])
+                    ssbot.send_reply(event, "Modules:" + txt[1:])
             else:
-                ssbot.sendReply(
+                ssbot.send_reply(
                     event, "Error:type(%s) not found" % (event.arguments[0]))
         else:
             c = 0
@@ -258,45 +268,45 @@ class Bot(BotInterface):
             for b in self.config.Bots.values():
                 c += 1
                 if c % 5 == 0:
-                    ssbot.sendReply(event, "Types:" + txt[1:])
+                    ssbot.send_reply(event, "Types:" + txt[1:])
                     txt = ""
                 txt += ", " + b.Type
 
             if len(txt) > 0:
-                ssbot.sendReply(event, "Types:" + txt[1:])
+                ssbot.send_reply(event, "Types:" + txt[1:])
             if c == 0:
-                ssbot.sendReply(event, "No Bot Types Defined")
+                ssbot.send_reply(event, "No Bot Types Defined")
 
     def HCUnloadModule(self, ssbot, event):
         if len(event.arguments) > 0:
             name = event.arguments[0]
             if name in sys.modules:
                 del sys.modules[name]
-                ssbot.sendReply(event, "module unloaded")
+                ssbot.send_reply(event, "module unloaded")
             else:
-                ssbot.sendReply(event, "module not found")
+                ssbot.send_reply(event, "module not found")
         else:
-            ssbot.sendReply(event, "invalid syntax")
+            ssbot.send_reply(event, "invalid syntax")
 
     def HCLog(self, ssbot, event):
         if len(event.arguments) > 0 and event.arguments[0].lower() == "-clear":
-            self.listhandler.Clear()
-            ssbot.sendReply(event, "on screen log cleared")
+            self.listhandler.clear()
+            ssbot.send_reply(event, "on screen log cleared")
         else:
-            for r in self.listhandler.GetEntries():
-                ssbot.sendReply(event, r)
+            for r in self.listhandler.get_entries():
+                ssbot.send_reply(event, r)
 
     def HCLoadConfig(self, ssbot, event):
         try:
             oc = copy.deepcopy(self.config)
             self.config.Load()
-            ssbot.sendReply(event, "Config Reloaded")
+            ssbot.send_reply(event, "Config Reloaded")
             self.logger.info("config file reloaded by %s" % event.pname)
         except:
             self.config = oc
-            ssbot.sendReply(event, "failure, still using old configuration")
+            ssbot.send_reply(event, "failure, still using old configuration")
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND and event.command.id in \
                 self._cmd_handlers:
             self._cmd_handlers[event.command.id](ssbot, event)
@@ -305,12 +315,12 @@ class Bot(BotInterface):
         elif event.type == EVENT_LOGIN:
             # for periodic deleting of inactive bots and removing of
             # old list entries from log
-            ssbot.setTimer(10, (2, None))
+            ssbot.set_timer(10, (2, None))
             c = 60  # wait for bot to login
             # stagger the bots to load by 180 sec each
             for b in self.config.AutoLoad:
                 c += 180
-                ssbot.setTimer(c, (1, b))
+                ssbot.set_timer(c, (1, b))
                 self.logger.info("Queued:[Sb] %s -> %s" % b)
         elif event.type == EVENT_TIMER:
             if event.user_data is not None \
@@ -319,21 +329,21 @@ class Bot(BotInterface):
 
                 if event.user_data[0] == 1:  # start a bot
                     t = event.user_data[1]
-                    # ssbot.sendPublicMessage("!sb %s %s" % t)
+                    # ssbot.send_public_message("!sb %s %s" % t)
                     r = self.StartBot(ssbot, ssbot.name, t[0], t[1], "")
                     if r == 1:
-                        ssbot.sendPublicMessage(
+                        ssbot.send_public_message(
                             "autospawn:successfull spawned %s to %s" % t)
                     elif r == -1:
-                        ssbot.sendPublicMessage(
+                        ssbot.send_public_message(
                             "autospawn:Error:type(%s) not found" % t[0])
                     elif r == -2:
-                        ssbot.sendPublicMessage(
+                        ssbot.send_public_message(
                             "autospawn:all %s in use" % t[0])
                 elif event.user_data[0] == 2:  # do maintenance
                     self.DeleteInactiveBots()
-                    self.listhandler.RemoveOld()
-                    ssbot.setTimer(10, (2, None))
+                    self.listhandler.remove_old()
+                    ssbot.set_timer(10, (2, None))
 
     def SendBroadcastsToAttachedBots(self, ssbot):
         if self.__queue.size() > 0:  # broadcasts waiting
@@ -341,13 +351,13 @@ class Bot(BotInterface):
                 while b:  # broadcasts waiting
                     for bot in self._instances.values():
                         if bot.is_alive():
-                            bot.queueBroadcast(b)  # all attached bots
-                    ssbot.queueBroadcast(b)  # modules attached to master
+                            bot.queue_broadcast(b)  # all attached bots
+                    ssbot.queue_broadcast(b)  # modules attached to master
 
                     # will return None if there are none
                     b = self.__queue.dequeue()
 
-    def Cleanup(self):
+    def cleanup(self):
         for v in self._instances.values():
             v.RequestStop()
 
@@ -406,14 +416,12 @@ def MasterMain():
 
         (options, args) = parser.parse_args()
 
-        Queue = MasterQue()
+        Queue = MasterQueue()
         ssbot = SubspaceBot(
             False, True, Queue, logging.getLogger("ML.Master.Core"))
-        ssbot.setBotInfo(
-            "Master",
-            "MasterBot Manages the starting/stopping of bots",
-            None
-        )
+        ssbot.set_bot_info("Master",
+                           "MasterBot Manages the starting/stopping of bots",
+                           None)
         BotList = []
         config = GlobalConfiguration(options.ConfigFile, options.Password)
 
@@ -438,7 +446,7 @@ def MasterMain():
         # load any bots that are specified in the config
         bot = None
         for m in config.Modules:
-            bot = LoadBot(
+            bot = load_bot(
                 ssbot,
                 m[0],
                 m[1],
@@ -450,20 +458,20 @@ def MasterMain():
                 BotList.append(bot)
             bot = None
         wait_time = 0
-        while ssbot.shouldReconnect():
-            ssbot.connectToServer(config.Host,
+        while ssbot.should_reconnect():
+            ssbot.connect_to_server(config.Host,
                                   config.Port,
                                   config.MasterName,
                                   config.MasterPassword,
                                   config.MasterArena)
-            while ssbot.isConnected():
+            while ssbot.is_connected():
                     wait_time = 0
-                    event = ssbot.waitForEvent()
+                    event = ssbot.wait_for_event()
                     for b in BotList:
-                        b.HandleEvents(ssbot, event)
+                        b.handle_events(ssbot, event)
             logger.critical("Master disconnected")
-            if ssbot.shouldReconnect():
-                ssbot.resetState()
+            if ssbot.should_reconnect():
+                ssbot.reset_state()
                 wait_time += 60
 
                 # if wait is over 10 mins reset wait period
@@ -478,17 +486,17 @@ def MasterMain():
         logger.critical("CTRL-c or System.exit() detected")
     except:
         logger.critical("Unhandled Exception")
-        LogException(logger)
+        log_exception(logger)
     finally:
-        if ssbot.isConnected():
-            ssbot.disconnectFromServer()
+        if ssbot.is_connected():
+            ssbot.disconnect_from_server()
         logger.info("Master disconnected")
         logger.info("Waiting For Bots to stop")
         logger.critical("Master shutting down")
         master.StopAllBots()
         logger.critical("Requested Stop for all active bots...")
         for b in BotList:
-            b.Cleanup()
+            b.cleanup()
         logger.critical("Master Bot behaviors cleansed")
         filehandler.close()
         sys.exit(1)
@@ -508,3 +516,33 @@ if __name__ == '__main__':
         pass
     else:
         MasterMain()
+
+
+class MasterQueue():
+    def __init__(self):
+        self.__queue = deque()
+        self.__lock = threading.Lock()
+
+    def queue(self, event):
+        self.__lock.acquire()
+        self.__queue.append(event)
+        self.__lock.release()
+
+    def dequeue(self):
+        q = None
+        self.__lock.acquire()
+        if len(self.__queue) > 0:
+            q = self.__queue.pop()
+        self.__lock.release()
+        return q
+
+    def size(self):
+        return len(self.__queue)
+
+
+class ShutDownException(Exception):
+    def __init__(self, value):
+        self.parameter = value
+
+    def __str__(self):
+        return repr(self.parameter)

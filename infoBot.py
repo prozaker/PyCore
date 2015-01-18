@@ -1,13 +1,16 @@
-'''
+"""
 @author: The Junky
-'''
+"""
+
 import copy
 import ConfigParser
 
-from BotUtilities import *
-from SubspaceBot import *
 from PlayerInfo import PlayerInfoBase, PlayerInfoManager
 from SSParsers import *
+from subspace_bot.interface import BotInterface
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.ships import *
+from subspace_bot.constants.events import *
 
 
 class Mode():
@@ -80,7 +83,7 @@ class MyConfigParser():
 class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "Info/LagBot",
             "The Junky",
@@ -90,7 +93,7 @@ class Bot(BotInterface):
         self.pman = PlayerInfoManager(self.module.Pinfo)
 
         self.__command_handlers_dict = {
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!lag',
                 None,
                 0,
@@ -99,7 +102,7 @@ class Bot(BotInterface):
                 "<name>",
                 "request/check players lag"
             ): self.HClag,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!limits',
                 None,
                 0,
@@ -108,7 +111,7 @@ class Bot(BotInterface):
                 None,
                 "display bot limits"
             ): self.HCLimits,
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!laghelp',
                 None,
                 0,
@@ -123,32 +126,32 @@ class Bot(BotInterface):
         self.mode = self.module.Mode()
         self.ticks = time.time()
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id in self.__command_handlers_dict:
                 self.__command_handlers_dict[event.command.id](ssbot, event)
 
         if event.type == EVENT_MESSAGE:
             # returns true when all the lines of info are parsed
-            if self.info.Parse(event.message):
+            if self.info.parse(event.message):
                 pi = self.pman.GetPlayerInfo(self.info.id.name)
                 # self.logger.debug( self.info.id.name + " parsed")
                 pi.info = copy.deepcopy(self.info)
                 self.ProcessInfo(ssbot, self.info)
-                ssbot.sendModuleEvent(__name__, "InfoParsed", pi.info)
-                self.info.Clear()
+                ssbot.send_module_event(__name__, "InfoParsed", pi.info)
+                self.info.clear()
 
         if event.type == EVENT_TICK and time.time() - self.ticks >= \
                 self.Check_interval:
             for p in ssbot.players_here:
-                ssbot.sendPrivateMessage(p, "*info")
+                ssbot.send_private_message(p, "*info")
             self.ticks = time.time()
-            # ssbot.sendPublicMessage("ALL")
+            # ssbot.send_public_message("ALL")
             # delete pinfos if a player is gone more than 6 hours
             self.pman.DeleteExpired()
 
         if event.type == EVENT_ENTER:
-            ssbot.sendPrivateMessage(event.player, "*info")
+            ssbot.send_private_message(event.player, "*info")
             self.CheckPlayerbootTimes(ssbot, event.player)
             # for pi manager to determine when to delete old pi
             self.pman.SetActive(event.player.name)
@@ -158,44 +161,44 @@ class Bot(BotInterface):
             self.pman.SetInactive(event.player.name)
 
         if event.type == EVENT_KILL and self.CheckKill:
-            ssbot.sendPrivateMessage(event.killer, "*info")
-            ssbot.sendPrivateMessage(event.killed, "*info")
+            ssbot.send_private_message(event.killer, "*info")
+            ssbot.send_private_message(event.killed, "*info")
 
         if event.type == EVENT_CHANGE and self.CheckChange:
             if event.player.ship != SHIP_SPECTATOR:
-                ssbot.sendPrivateMessage(event.player, "*info")
+                ssbot.send_private_message(event.player, "*info")
                 self.CheckPlayerbootTimes(ssbot, event.player)
 
         if event.type == EVENT_FLAG_PICKUP and self.CheckFlag:
-            ssbot.sendPrivateMessage(event.player, "*info")
+            ssbot.send_private_message(event.player, "*info")
 
         if event.type == EVENT_FLAG_DROP and self.CheckFlag:
-            ssbot.sendPrivateMessage(event.player, "*info")
+            ssbot.send_private_message(event.player, "*info")
 
     def CheckPlayerbootTimes(self, ssbot, player):
         pi = self.pman.GetPlayerInfo(player.name)
         if pi and pi.last_boot_time and time.time() - pi.last_boot_time < \
                 self.min_boot_time:
-            ssbot.sendPrivateMessage(player, "*spec")
-            ssbot.sendPrivateMessage(player, "*spec")
+            ssbot.send_private_message(player, "*spec")
+            ssbot.send_private_message(player, "*spec")
 
     def HClag(self, ssbot, event):
         if len(event.arguments_after) > 0:
-            p = ssbot.findPlayerByName(event.arguments_after[0])
+            p = ssbot.find_player_by_name(event.arguments_after[0])
             if(p):
-                # ssbot.sendReply(event, "PlayerFound")
+                # ssbot.send_reply(event, "PlayerFound")
                 pi = self.pman.GetPlayerInfo(p.name)
                 if(pi.info and time.time() - pi.info.ticks < self.CacheTime):
                     self.PrivLag(ssbot, pi.info, event.player)
-                    # ssbot.sendReply(event, "use cached info")
+                    # ssbot.send_reply(event, "use cached info")
                 else:
-                    ssbot.sendPrivateMessage(p, "*info")
+                    ssbot.send_private_message(p, "*info")
                     pi.requestee_list.append(event.player.pid)
-                    # ssbot.sendReply(event, "get new info")
+                    # ssbot.send_reply(event, "get new info")
             else:
-                ssbot.sendReply(event, "Player Not Found")
+                ssbot.send_reply(event, "Player Not Found")
         else:
-            ssbot.sendReply(event, "incorrect syntax use !lag <player>")
+            ssbot.send_reply(event, "incorrect syntax use !lag <player>")
 
     def ReadConfig(self):
         config = MyConfigParser(self.module_path + R"\info.ini")
@@ -253,10 +256,10 @@ class Bot(BotInterface):
         self.detailed_info = config.getint("Info", "DetailedInfo", 1)
 
     def ProcessInfo(self, ssbot, info):
-        p = ssbot.findPlayerByName(info.id.name)
+        p = ssbot.find_player_by_name(info.id.name)
         pi = self.pman.GetPlayerInfo(info.id.name)
-        # ssbot.sendPublicMessage("processing..." + info.id.name)
-        punishment = ""
+        # ssbot.send_public_message("processing..." + info.id.name)
+
         if(self.Enabled):
             ploss = self.mode.GetValue(
                 info.ploss.c2s, info.ploss.s2c, self.pl_mode)
@@ -265,7 +268,7 @@ class Bot(BotInterface):
             spt = self.mode.GetValue(
                 info.s2c.total_ratio, info.c2s.total_ratio, self.spt_mode)
             if p.ship != SHIP_SPECTATOR and len(ssbot.players_here) > \
-                    self.mPop and ssbot.getAccessLevel(p.name) < \
+                    self.mPop and ssbot.get_access_level(p.name) < \
                     self.exempt_lvl:
                 reasons = ""
                 overlimit = 0
@@ -296,111 +299,111 @@ class Bot(BotInterface):
                     reasons += "SPT:%2.2f" % (spt)
                 if self.LowBandwidthTest and self.limPL4LB < ploss and \
                         info.conninfo.lowbandwidth == 0:
-                    ssbot.sendPrivateMessage(p, "*lowbandwidth")
+                    ssbot.send_private_message(p, "*lowbandwidth")
                 if overlimit > 0:
                     if self.ForceReconnect:
                         punishment = "killed"
-                        ssbot.sendPrivateMessage(p, "kill")
+                        ssbot.send_private_message(p, "kill")
                     else:
                         punishment = "specced"
-                        ssbot.sendPrivateMessage(p, "spec")
-                        ssbot.sendPrivateMessage(p, "Spec")
+                        ssbot.send_private_message(p, "spec")
+                        ssbot.send_private_message(p, "Spec")
 
                     if self.ArenaOnSpec:
                         if self.SpamRequestee:
                             # put something special in the spam to
                             # indicate he has his own limits
-                            ssbot.sendArenaMessage(
+                            ssbot.send_arena_message(
                                 "[ %s ] %s Reason %s Requested by %s" % (
                                     p.name, punishment, reasons, "Bot")
                             )
                         else:
-                            ssbot.sendArenaMessage(
+                            ssbot.send_arena_message(
                                 "[ %s ] %s Reason %s" % (
                                     p.name, punishment, reasons)
                             )
 
                     pi.last_boot_time = time.time()
                     if self.SetFreq:
-                        ssbot.sendPrivateMessage(p, "setfreq %i" % p.freq)
+                        ssbot.send_private_message(p, "setfreq %i" % p.freq)
 
-        while len(pi.requestee_list):
-            rpid = pi.requestee_list.pop()
-            if rpid != ssbot.pid:
-                p2 = ssbot.findPlayerByPid(rpid)
-                if(p2):
-                    self.PrivLag(ssbot, info, p2)
+            while len(pi.requestee_list):
+                rpid = pi.requestee_list.pop()
+                if rpid != ssbot.pid:
+                    p2 = ssbot.find_player_by_pid(rpid)
+                    if(p2):
+                        self.PrivLag(ssbot, info, p2)
 
-        def PrivLag(self, ssbot, info, p):
-            ploss = self.mode.GetValue(
-                info.ploss.c2s, info.ploss.s2c, self.pl_mode)
-            spc = self.mode.GetValue(
-                info.s2c.current_ratio, info.c2s.current_ratio, self.spc_mode)
-            spt = self.mode.GetValue(
-                info.s2c.total_ratio, info.c2s.total_ratio, self.spt_mode)
+    def PrivLag(self, ssbot, info, p):
+        ploss = self.mode.GetValue(
+            info.ploss.c2s, info.ploss.s2c, self.pl_mode)
+        spc = self.mode.GetValue(
+            info.s2c.current_ratio, info.c2s.current_ratio, self.spc_mode)
+        spt = self.mode.GetValue(
+            info.s2c.total_ratio, info.c2s.total_ratio, self.spt_mode)
 
-            msg = "[ %s ] C:%i  A:%i  H:%i" % (
-                info.id.name, info.ping.cur, info.ping.ave, info.ping.high)
-            msg += " PL:%2.1f [S2C %2.1f C2S %2.1f] WPL:%2.1f" % (
-                ploss, info.ploss.s2c, info.ploss.c2s, info.ploss.s2c_weapons)
-            msg += " SpC:%2.1f [S2C %2.1f C2S %2.1f]" % (
-                spc, info.s2c.current_ratio, info.c2s.current_ratio)
-            msg += " SpT:%2.1f [S2C %2.1f C2S %2.1f]" % (
-                spt, info.s2c.total_ratio, info.c2s.total_ratio)
-            msg += " %3.2fs-old" % (time.time() - info.ticks)
-            ssbot.sendPrivateMessage(p, msg)
+        msg = "[ %s ] C:%i  A:%i  H:%i" % (
+            info.id.name, info.ping.cur, info.ping.ave, info.ping.high)
+        msg += " PL:%2.1f [S2C %2.1f C2S %2.1f] WPL:%2.1f" % (
+            ploss, info.ploss.s2c, info.ploss.c2s, info.ploss.s2c_weapons)
+        msg += " SpC:%2.1f [S2C %2.1f C2S %2.1f]" % (
+            spc, info.s2c.current_ratio, info.c2s.current_ratio)
+        msg += " SpT:%2.1f [S2C %2.1f C2S %2.1f]" % (
+            spt, info.s2c.total_ratio, info.c2s.total_ratio)
+        msg += " %3.2fs-old" % (time.time() - info.ticks)
+        ssbot.send_private_message(p, msg)
 
-        def HCLagHelp(self, ssbot, event):
-            help_message = [
-                ":--------------------------------------------------------------------------------------------:",
-                ": [ Name ] C:0  A:0  H:0  PL:0.0 [S2C 0.0 C2S 0.0] WPL:0.0 SpC:0.0 [S2C 0.0 C2S 0.0]         :",
-                ":         SpT:0.0 [S2C 0.0 C2S 0.0] 0s-old                                                   :",
-                ": !lag returns the ping/packetloss information the server has collected on someone.          :",
-                ": Listed below are what each lag statistic means.                                            :",
-                ":                                                                                            :",
-                ": C       - Ping(Current)  The server only collects this every 5 or so minutes.              :",
-                ": A       - Ping(Average)  The ping average over the length of the connection.               :",
-                ": H       - Ping(High)     At least one single lagged packet over the connection.            :",
-                ": WPL     - Server to Client packetloss from weapons.  Very indicitive of someone            :",
-                ":                           tanking and eating 15 bombs.                                     :",
-                ": PL      - Packetloss.    Packetloss is what the server has recorded as lost                :",
-                ":                           packets from client to server, and server to client.             :",
-                ": SpC     - SpikeCurrent.  This is a percentage of packets in the last 200 which             :",
-                ":                           arrive at the server after 500ms.  It's a spike.                 :",
-                ": SpT     - SpikesTotal.   This is how many packets have come in at over 500ms               :",
-                ":                           over your total connection have come in after 500ms.             :",
-                ":           Some fields such as PL/SPC/SPT have 2 components:                                :",
-                ":           S2C - Server To Client & C2S - Client to Server                                  :",
-                ":           These Fields are handled in ways: (Summed, Averaged, or Maximum Value) used      :",
-                ":                                                                                            :",
-                ":--------------------- Use !limits to see the current lag limits/Modes ----------------------:"
-            ]
+    def HCLagHelp(self, ssbot, event):
+        help_message = [
+            ":--------------------------------------------------------------------------------------------:",
+            ": [ Name ] C:0  A:0  H:0  PL:0.0 [S2C 0.0 C2S 0.0] WPL:0.0 SpC:0.0 [S2C 0.0 C2S 0.0]         :",
+            ":         SpT:0.0 [S2C 0.0 C2S 0.0] 0s-old                                                   :",
+            ": !lag returns the ping/packetloss information the server has collected on someone.          :",
+            ": Listed below are what each lag statistic means.                                            :",
+            ":                                                                                            :",
+            ": C       - Ping(Current)  The server only collects this every 5 or so minutes.              :",
+            ": A       - Ping(Average)  The ping average over the length of the connection.               :",
+            ": H       - Ping(High)     At least one single lagged packet over the connection.            :",
+            ": WPL     - Server to Client packetloss from weapons.  Very indicitive of someone            :",
+            ":                           tanking and eating 15 bombs.                                     :",
+            ": PL      - Packetloss.    Packetloss is what the server has recorded as lost                :",
+            ":                           packets from client to server, and server to client.             :",
+            ": SpC     - SpikeCurrent.  This is a percentage of packets in the last 200 which             :",
+            ":                           arrive at the server after 500ms.  It's a spike.                 :",
+            ": SpT     - SpikesTotal.   This is how many packets have come in at over 500ms               :",
+            ":                           over your total connection have come in after 500ms.             :",
+            ":           Some fields such as PL/SPC/SPT have 2 components:                                :",
+            ":           S2C - Server To Client & C2S - Client to Server                                  :",
+            ":           These Fields are handled in ways: (Summed, Averaged, or Maximum Value) used      :",
+            ":                                                                                            :",
+            ":--------------------- Use !limits to see the current lag limits/Modes ----------------------:"
+        ]
 
-            for line in help_message:
-                ssbot.sendReply(event, line)
+        for line in help_message:
+            ssbot.send_reply(event, line)
 
-        def HCLimits(self, ssbot, event):
-            if self.AverageTest:
-                ssbot.sendReply(event, "Ping (Average): %ld ms" % self.limAv)
-            if self.CurrentTest:
-                ssbot.sendReply(event, "Ping (Current): %ld ms" % self.limCur)
-            if self.HighTest:
-                ssbot.sendReply(event, "Ping (High): %ld ms" % self.limHigh)
-            if self.PacketLossTest:
-                ssbot.sendReply(event, "Packetloss: %2.2f%% Mode:%s" % (
-                    self.limPloss, self.module.Mode.NAME[self.pl_mode]))
-            if self.SlowCurrentTest:
-                ssbot.sendReply(event, "Spike Current: %2.2f%% Mode:%s" % (
-                    self.limSpC, self.module.Mode.NAME[self.spc_mode]))
-            if self.SlowTotalTest:
-                ssbot.sendReply(event, "Spike Total: %2.2f%% Mode:%s" % (
-                    self.limSpT, self.module.Mode.NAME[self.spt_mode]))
-            if self.WeaponsPLossTest:
-                ssbot.sendReply(
-                    event, "Weapons Packetloss: %2.2f%%" % self.limWP)
-            if self.NegPlossTest:
-                ssbot.sendReply(
-                    event, "Negative Packetloss: %2.2f%%" % self.limNPL)
-            if self.LowBandwidthTest and event.plvl:
-                ssbot.sendReply(
-                    event, "Lowbandwidth Pl: %2.2f%%" % self.limPL4LB)
+    def HCLimits(self, ssbot, event):
+        if self.AverageTest:
+            ssbot.send_reply(event, "Ping (Average): %ld ms" % self.limAv)
+        if self.CurrentTest:
+            ssbot.send_reply(event, "Ping (Current): %ld ms" % self.limCur)
+        if self.HighTest:
+            ssbot.send_reply(event, "Ping (High): %ld ms" % self.limHigh)
+        if self.PacketLossTest:
+            ssbot.send_reply(event, "Packetloss: %2.2f%% Mode:%s" % (
+                self.limPloss, self.module.Mode.NAME[self.pl_mode]))
+        if self.SlowCurrentTest:
+            ssbot.send_reply(event, "Spike Current: %2.2f%% Mode:%s" % (
+                self.limSpC, self.module.Mode.NAME[self.spc_mode]))
+        if self.SlowTotalTest:
+            ssbot.send_reply(event, "Spike Total: %2.2f%% Mode:%s" % (
+                self.limSpT, self.module.Mode.NAME[self.spt_mode]))
+        if self.WeaponsPLossTest:
+            ssbot.send_reply(
+                event, "Weapons Packetloss: %2.2f%%" % self.limWP)
+        if self.NegPlossTest:
+            ssbot.send_reply(
+                event, "Negative Packetloss: %2.2f%%" % self.limNPL)
+        if self.LowBandwidthTest and event.plvl:
+            ssbot.send_reply(
+                event, "Lowbandwidth Pl: %2.2f%%" % self.limPL4LB)

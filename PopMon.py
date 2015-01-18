@@ -1,14 +1,16 @@
-'''
+"""
 @author: The Junky
 
-'''
-
-from BotUtilities import *
-from SubspaceBot import *
+"""
 
 import TimerManager
 from Amysql import *
-
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.messaging import SSmessenger
+from subspace_bot.utilities.loggers import log_exception, LoggingPublicHandler
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
 
 """
 CREATE TABLE `population` (
@@ -77,7 +79,7 @@ class PopStats:
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "Population Monitoring/Logger",
             "The Junky",
@@ -95,7 +97,7 @@ class Bot(BotInterface):
             COMMAND_TYPE_PRIVATE,
             COMMAND_TYPE_CHAT
         ]
-        self.CID_SP = bot.registerCommand(
+        self.CID_SP = bot.register_command(
             '!showpop',
             "!sp",
             2,
@@ -104,7 +106,7 @@ class Bot(BotInterface):
             "limit",
             'show last x entries'
         )
-        self.CID_SPG = bot.registerCommand(
+        self.CID_SPG = bot.register_command(
             '!showpopgraph',
             "!spg",
             2,
@@ -115,7 +117,7 @@ class Bot(BotInterface):
         )
         self.level = logging.DEBUG
 
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
         self.QTYPE_SQL = 1
         self.QTYPE_SPG = 2
         self.QTYPE_ADDPOP = 3
@@ -132,7 +134,7 @@ class Bot(BotInterface):
         self.timer_man.set(30, self.TID_PARSE_STATS)
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingPublicHandler(logging.DEBUG, bot, "*bot")
+        handler = LoggingPublicHandler(logging.DEBUG, bot, "*bot")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         # gayness because of master bot doesnt auto load all the other
@@ -171,13 +173,13 @@ class Bot(BotInterface):
         this function will print any result nicely on screen
         with proper formatting
         """
-        ss = BotUtilities.SSmessenger(ssbot, mtype, target)
+        ss = SSmessenger(ssbot, mtype, target)
         if res.rows is None or len(res.rows) == 0:
             if res.error_msg:
-                ss.sendMessage("Error: " + str(res.error_msg))
+                ss.send_message("Error: " + str(res.error_msg))
         else:
             if not res.description:
-                ss.sendMessage("#### NO RESULTS ###")
+                ss.send_message("#### NO RESULTS ###")
             else:
                 min = 9999
                 max = 0
@@ -205,12 +207,12 @@ class Bot(BotInterface):
                         if i < min:
                             break
                     if data_points:
-                        ss.sendMessage(txt)
-                ss.sendMessage("000|" + "-" * len(res.rows))
-                ss.sendMessage("Max:%3i Min:%3i Avg:%3.2f" %
+                        ss.send_message(txt)
+                ss.send_message("000|" + "-" * len(res.rows))
+                ss.send_message("Max:%3i Min:%3i Avg:%3.2f" %
                                (max, min, total/count))
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
 
         if event.type == EVENT_COMMAND:
             if event.command.id == self.CID_SPG:
@@ -234,7 +236,7 @@ class Bot(BotInterface):
                         l = int(event.arguments[0])
                     except:
                         l = 10
-                        LogException(self.logger)
+                        log_exception(self.logger)
                     if l <= 100:
                         limit = "limit " + str(l)
                     else:
@@ -297,8 +299,8 @@ class Bot(BotInterface):
                 # Clear stats and repopulate
                 elif timer_expired.data == self.TID_PARSE_STATS:
                     self.popStats.Reset()
-                    ssbot.sendPublicMessage("*listmod")
-                    ssbot.sendPublicMessage("?arena")
+                    ssbot.send_public_message("*listmod")
+                    ssbot.send_public_message("?arena")
                     # do it again in 30 mins
                     self.timer_man.set(1800, self.TID_PARSE_STATS)
                     # in 10 secs pop stats will be done send it to db
@@ -328,7 +330,7 @@ class Bot(BotInterface):
                         s.smods,
                         s.mods
                     )
-                    ssbot.sendPublicMessage(query % qtp)
+                    ssbot.send_public_message(query % qtp)
                     # (qtype, message type to respond with,
                     # target[playername if priv msg)
                     qdata = (self.QTYPE_ADDPOP, MESSAGE_TYPE_PUBLIC, None)
@@ -353,9 +355,9 @@ class Bot(BotInterface):
                 r.GenericResultPrettyPrinter(
                     ssbot, r.query.data[1], r.query.data[2], True)
 
-    def Cleanup(self):
+    def cleanup(self):
         self._db.cleanUp()
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True)
+    bot_main(Bot, False, True)

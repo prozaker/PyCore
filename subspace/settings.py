@@ -1,4 +1,4 @@
-'''
+"""
 Created on Feb 15, 2011
 
 # Ship settings
@@ -7,7 +7,8 @@ Adapted from mervbot/asss to pybot
 
 @author: The Junky <thejunky@gmail.com>
 
-'''
+"""
+
 import struct
 
 
@@ -20,9 +21,10 @@ class BitSet(object):
     def __init__(self, offset_dict, data):
         d = data[0]
         for k, v in offset_dict.iteritems():
-            self.__setattr__(k, self.__extractBits(d, v[0], v[1]))
+            self.__setattr__(k, self.__extract_bits(d, v[0], v[1]))
 
-    def __extractBits(self, data, offset, size):
+    @staticmethod
+    def __extract_bits(data, offset, size):
         mask = 0
         for i in range(offset, offset+size):
             mask |= 1 << i
@@ -591,7 +593,7 @@ class PrizeSettings(object):
 
 
 # Arena settings
-class arenaSettings(object):  # 1428 bytes wide
+class ArenaSettings(object):  # 1428 bytes wide
     # Initial template by Snrrrub
     # print "arena settings offset:%i len:%d"%(offset, len(packet))
     def __init__(self, packet):

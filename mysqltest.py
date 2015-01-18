@@ -1,18 +1,23 @@
-'''
+"""
 @author: The Junky
 
-'''
+"""
 
-from BotUtilities import *
-from SubspaceBot import *
+
 import TimerManager
 from Amysql import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.loggers import LoggingRemoteHandler
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.events import *
+from subspace_bot.constants.messages import *
 
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "MysqLtest",
             "The Junky",
@@ -27,7 +32,7 @@ class Bot(BotInterface):
         self.clist = [COMMAND_TYPE_PUBLIC, COMMAND_TYPE_TEAM,
                       COMMAND_TYPE_FREQ, COMMAND_TYPE_PRIVATE,
                       COMMAND_TYPE_CHAT]
-        self._sql_command_id = bot.registerCommand(
+        self._sql_command_id = bot.register_command(
             '!sql',
             None,
             9,
@@ -36,7 +41,7 @@ class Bot(BotInterface):
             "[query]",
             'sql it zz'
         )
-        self._sqlnl_command_id = bot.registerCommand(
+        self._sqlnl_command_id = bot.register_command(
             '!sqlnl',
             None,
             9,
@@ -49,10 +54,10 @@ class Bot(BotInterface):
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(.01, 1)
         self.timer_man.set(300, 2)
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingRemoteHandler(logging.DEBUG, bot, "Ratio")
+        handler = LoggingRemoteHandler(logging.DEBUG, bot, "Ratio")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
@@ -79,11 +84,11 @@ class Bot(BotInterface):
 
         return (mtype, target)
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
 
         if event.type == EVENT_COMMAND:
-            ssbot.sendLvzObjectToggle(event.pname, [(76, True)])
-            ssbot.sendReply("76 on")
+            ssbot.send_lvz_object_toggle(event.pname, [(76, True)])
+            ssbot.send_reply("76 on")
             if event.command.id in [
                     self._sql_command_id, self._sqlnl_command_id]:
 
@@ -122,9 +127,9 @@ class Bot(BotInterface):
             r.GenericResultPrettyPrinter(
                 ssbot, r.query.data[0], r.query.data[1])
 
-    def Cleanup(self):
+    def cleanup(self):
         pass
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True, "99")
+    bot_main(Bot, False, True, "99")

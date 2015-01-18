@@ -1,11 +1,12 @@
-from SubspaceBot import *
-from BotUtilities import *
 import TimerManager
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.constants.events import *
 
 
 class Bot(BotInterface):
     def __init__(self, ssbot, md):
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "pubeventskiller",
             "The Junky",
@@ -21,7 +22,7 @@ class Bot(BotInterface):
         }
         pass
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_TICK:
             timer_expired = self.tm.getExpired()
             if timer_expired:
@@ -29,14 +30,14 @@ class Bot(BotInterface):
                 if timer_expired.data == 1:
                             for bname, answered in \
                                     self.killable_bots.iteritems():
-                                p = ssbot.findPlayerByName(bname)
+                                p = ssbot.find_player_by_name(bname)
                                 if p:
                                     if answered:
-                                        ssbot.sendPrivateMessage(p, "!wtf")
+                                        ssbot.send_private_message(p, "!wtf")
                                         self.bots_to_check[event.pname] = False
                                     else:
-                                        ssbot.sendPrivateMessage(p, "*kill")
-                                        ssbot.sendPublicMessage(
+                                        ssbot.send_private_message(p, "*kill")
+                                        ssbot.send_public_message(
                                             "?alert %s is not responding and"
                                             " has been killed" % bname
                                         )
@@ -46,8 +47,8 @@ class Bot(BotInterface):
             if event.pname in self.bots_to_check:
                 self.bots_to_check[event.pname] = True
 
-    def Cleanup(self):
+    def cleanup(self):
         pass
 
 if __name__ == '__main__':
-    botMain(Bot, False, False, "99")
+    bot_main(Bot, False, False, "99")

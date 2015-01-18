@@ -1,18 +1,23 @@
-'''
+"""
 @author: The Junky
 
-'''
+"""
 
-from BotUtilities import *
-from SubspaceBot import *
 import TimerManager
 from Amysql import *
+
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
+from subspace_bot.constants.events import *
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.utilities.loggers import LoggingRemoteHandler
 
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "MysqLtest",
             "The Junky",
@@ -27,16 +32,16 @@ class Bot(BotInterface):
                       COMMAND_TYPE_FREQ, COMMAND_TYPE_PRIVATE,
                       COMMAND_TYPE_CHAT]
         self.commands = {
-            bot.registerCommand(
-                '!sql',
-                None,
-                9,
-                self.clist,
-                "db",
-                "[query]",
-                'sql it zz'
-            ): (self.CMD_SQL, ""),
-            bot.registerCommand(
+            # bot.register_command(
+            #     '!sql',
+            #     None,
+            #     9,
+            #     self.clist,
+            #     "db",
+            #     "[query]",
+            #     'sql it zz'
+            # ): (self.cmd_sql, ""),
+            bot.register_command(
                 '!sqlnl',
                 None,
                 9,
@@ -44,8 +49,8 @@ class Bot(BotInterface):
                 "db",
                 "[query]",
                 'sql it zz'
-            ): (self.CMD_SQL, "nl"),
-            bot.registerCommand(
+            ): (self.cmd_sql, "nl"),
+            bot.register_command(
                 '!addplayer',
                 "!ap",
                 5,
@@ -53,8 +58,8 @@ class Bot(BotInterface):
                 "egdl",
                 "[name:vp:squadid]",
                 'create/add new player to current league'
-            ): (self.CMD_AP, ""),
-            bot.registerCommand(
+            ): (self.cmd_ap, ""),
+            bot.register_command(
                 '!changeplayer',
                 "!cp",
                 5,
@@ -62,8 +67,8 @@ class Bot(BotInterface):
                 "egdl",
                 "[name:vp:squadid]",
                 'update existing player'
-            ): (self.CMD_CP, ""),
-            bot.registerCommand(
+            ): (self.cmd_cp, ""),
+            bot.register_command(
                 '!deleteplayer',
                 "!dp",
                 5,
@@ -71,8 +76,8 @@ class Bot(BotInterface):
                 "egdl",
                 "[name]",
                 'update existing player'
-            ): (self.CMD_DP, ""),
-            bot.registerCommand(
+            ): (self.cmd_dp, ""),
+            bot.register_command(
                 '!listsquads',
                 "!ls",
                 5,
@@ -80,8 +85,8 @@ class Bot(BotInterface):
                 "egdl",
                 "",
                 'list squads'
-            ): (self.CMD_LS, ""),
-            bot.registerCommand(
+            ): (self.cmd_ls, ""),
+            bot.register_command(
                 '!listplayers',
                 "!lp",
                 5,
@@ -89,20 +94,21 @@ class Bot(BotInterface):
                 "egdl",
                 "[squad]",
                 'list squads'
-            ): (self.CMD_LP, "")
+            ): (self.cmd_lp, "")
         }
         self.level = logging.DEBUG
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(.01, 1)
         self.timer_man.set(300, 2)
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
 
         formatter = logging.Formatter('%(message)s')
-        handler = loggingRemoteHandler(logging.DEBUG, bot, "Ratio")
+        handler = LoggingRemoteHandler(logging.DEBUG, bot, "Ratio")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-    def getMessageTuple(self, event):
+    @staticmethod
+    def get_message_tuple(event):
         """
             this data will be used later in pretty printer
             when the result is to be printed back to ss
@@ -125,21 +131,22 @@ class Bot(BotInterface):
 
         return (mtype, target)
 
-    def CMD_SQL(self, ssbot, event, param):
-        ssbot.sendReply(event, "Disabled")
+    @staticmethod
+    def cmd_sql(ssbot, event, param):
+        ssbot.send_reply(event, "Disabled")
         return 0
-        if len(event.arguments) >= 1:
-            if param and param == "nl":  # automatically addlimit or not
-                limit = ""
-            else:
-                limit = " limit 100"
-            mt = self.getMessageTuple(event)
-            db = self._db
-            db.query(event.arguments_after[0] + limit, None, mt)
+        # if len(event.arguments) >= 1:
+        #     if param and param == "nl":  # automatically addlimit or not
+        #         limit = ""
+        #     else:
+        #         limit = " limit 100"
+        #     mt = self.get_message_tuple(event)
+        #     db = self._db
+        #     db.query(event.arguments_after[0] + limit, None, mt)
 
-    def CMD_AP(self, ssbot, event, param):
+    def cmd_ap(self, ssbot, event, param):
         if len(event.arguments) >= 1:
-            mt = self.getMessageTuple(event)
+            mt = self.get_message_tuple(event)
             db = self._db
             q = """insert into egdl_players
             (userid, name, ip, machineid, vp, status, squad_id)
@@ -147,39 +154,39 @@ class Bot(BotInterface):
              """
             t = event.arguments_after[0].split(":")
             if len(t) != 3:
-                ssbot.sendReply(event, "Could not parse 3 items")
+                ssbot.send_reply(event, "Could not parse 3 items")
             else:
                 # print t
                 db.query(q, (t[0], t[1], t[2]), mt)
 
-    def CMD_CP(self, ssbot, event, param):
-        mt = self.getMessageTuple(event)
+    def cmd_cp(self, ssbot, event, param):
+        mt = self.get_message_tuple(event)
         db = self._db
         q = "update egdl_players p set p.vp=%s, p.squad_id=%s where p.name=%s"
         t = event.arguments_after[0].split(":")
         if len(t) != 3:
-            ssbot.sendReply(event, "Could not parse 3 items")
+            ssbot.send_reply(event, "Could not parse 3 items")
         else:
             # print t
             db.query(q, (t[1], t[2], t[0]), mt)
 
-    def CMD_DP(self, ssbot, event, param):
+    def cmd_dp(self, ssbot, event, param):
         if len(event.arguments) >= 1:
-            mt = self.getMessageTuple(event)
+            mt = self.get_message_tuple(event)
             db = self._db
             db.query(
                 "delete from egdl_players where name=%s", (
                     event.arguments_after[0], ), mt
             )
 
-    def CMD_LS(self, ssbot, event, param):
-        mt = self.getMessageTuple(event)
+    def cmd_ls(self, ssbot, event, param):
+        mt = self.get_message_tuple(event)
         db = self._db
         db.query("Select s.* from egdl_squads s limit 100", None, mt)
 
-    def CMD_LP(self, ssbot, event, param):
+    def cmd_lp(self, ssbot, event, param):
         if len(event.arguments) >= 1:
-            mt = self.getMessageTuple(event)
+            mt = self.get_message_tuple(event)
             db = self._db
             db.query(
                 "Select s.name, p.* from egdl_players p, egdl_squads s "
@@ -187,7 +194,7 @@ class Bot(BotInterface):
                     event.arguments_after[0], ), mt
             )
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_COMMAND:
             if event.command.id in self.commands:
                 c = self.commands[event.command.id]
@@ -218,9 +225,9 @@ class Bot(BotInterface):
             r.GenericResultPrettyPrinter(
                 ssbot, r.query.data[0], r.query.data[1])
 
-    def Cleanup(self):
+    def cleanup(self):
         self._db.cleanUp()
 
 # bot runs in this if not run by master u can ignore this
 if __name__ == '__main__':
-    botMain(Bot, False, True, "#egfdl")
+    bot_main(Bot, False, True, "#egfdl")

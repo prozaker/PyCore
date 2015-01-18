@@ -1,6 +1,9 @@
-from SubspaceBot import *
-from BotUtilities import *
 import TimerManager
+from subspace_bot.helpers import bot_main
+from subspace_bot.interface import BotInterface
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.ships import *
+from subspace_bot.constants.events import *
 
 
 class Tier():
@@ -23,29 +26,29 @@ class Tier():
         return self.min_pop
 
     def doTransition(self, ssbot, c):
-        ssbot.sendChangeSettings(self.sets)
-        ssbot.sendArenaMessage(
+        ssbot.send_change_settings(self.sets)
+        ssbot.send_arena_message(
             "Population(%s): settings changed to POPSET: %s" %
             (str(c), self.desc)
         )
-        ssbot.sendPublicMessage(
+        ssbot.send_public_message(
             "*bot Population(%s): settings changed to POPSET: %s" %
             (str(c), self.desc)
         )
 
     def printReply(self, ssbot, event):
-        ssbot.sendReply(
+        ssbot.send_reply(
             event,
             "Tier: " + self.desc + " MinPop: " + str(self.min_pop)
         )
         for s in self.sets:
-            ssbot.sendReply(event, "Tier Setting(s):" + s)
+            ssbot.send_reply(event, "Tier Setting(s):" + s)
 
     def printPublic(self, ssbot):
-        ssbot.sendPublicMessage(
+        ssbot.send_public_message(
             "Tier: " + self.desc + " MinPop: " + str(self.min_pop))
         for s in self.sets:
-            ssbot.sendPublicMessage("Tier Setting(s):" + s)
+            ssbot.send_public_message("Tier Setting(s):" + s)
 
     def __repr__(self):
         return self.desc
@@ -58,7 +61,7 @@ class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
         # register Your Module
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "Popset",
             "The Junky",
@@ -66,7 +69,7 @@ class Bot(BotInterface):
             ".03"
         )
         # register your commands
-        self.cmddt = ssbot.registerCommand(
+        self.cmddt = ssbot.register_command(
             '!doTransition',
             "!dt",
             2,
@@ -75,7 +78,7 @@ class Bot(BotInterface):
             "[on|off|normal]",
             "Control settings based on pop"
         )
-        self.cmdlt = ssbot.registerCommand(
+        self.cmdlt = ssbot.register_command(
             '!listTransition', "!lt",
             0,
             COMMAND_LIST_PP,
@@ -123,7 +126,7 @@ class Bot(BotInterface):
                     self.current = t
                 break
 
-    def HandleEvents(self, ssbot, event):
+    def handle_events(self, ssbot, event):
         if event.type == EVENT_LOGIN:
             # first check 5 secs after login
             self.tm.set(5, 1)
@@ -134,27 +137,27 @@ class Bot(BotInterface):
                         if not self.enabled:
                             self.enabled = True
                             self.tm.set(1, 1)
-                            ssbot.sendReply(event, "ok")
+                            ssbot.send_reply(event, "ok")
                     elif event.arguments[0].lower() == "off":
                         if self.enabled:
                             self.enabled = False
                             self.tm.deleteAll()
-                            ssbot.sendReply(event, "ok")
+                            ssbot.send_reply(event, "ok")
                     elif event.arguments[0].lower() == "normal":
                         if self.enabled:
                             self.enabled = False
                             self.tm.deleteAll()
                             self.normal.doTransition(ssbot, event.pname)
-                            ssbot.sendReply(event, "ok")
+                            ssbot.send_reply(event, "ok")
                     else:
                         self.doTransition(ssbot)
             elif event.command.id == self.cmdlt:
-                ssbot.sendReply(event, "Current Setting:" + str(self.current))
+                ssbot.send_reply(event, "Current Setting:" + str(self.current))
                 for t in self.tiers:
                     t.printReply(ssbot, event)
         elif event.type == EVENT_ENTER:
             if self.current:
-                ssbot.sendPrivateMessage(
+                ssbot.send_private_message(
                     event.player,
                     "Current Setting:%s ::!lt for more details" % str(
                         self.current)
@@ -169,7 +172,7 @@ class Bot(BotInterface):
                     # self.tm.set(self.current.getNextTimerDelay(), 1)
                     self.tm.set(5 * 60, 1)
 
-    def Cleanup(self):
+    def cleanup(self):
         # put any cleanup code in here this is called when bot is about to die
         pass
 
@@ -177,4 +180,4 @@ if __name__ == '__main__':
     # bot runs in this if not run by master
     # generic main function for when you run bot in standalone mode
     # we pass in the Bot class to the function, so it can run it for us
-    botMain(Bot, False, False, "#master")
+    bot_main(Bot, False, False, "#master")
