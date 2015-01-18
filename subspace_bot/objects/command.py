@@ -1,8 +1,8 @@
 class Command():
 
-    def __init__(self, id, name, alias, access_level, msg_types_list,
+    def __init__(self, command_id, name, alias, access_level, msg_types_list,
                  category, args, help_short, help_long=None):
-        self.id = id
+        self.id = command_id
         self.name = name
         self.alias = alias
         self.access_level = access_level

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from SubspaceBot import *
+from subspace_bot.objects.bot import SubspaceBot
 
 
 PID_NONE = 0xFFFF
@@ -135,7 +135,7 @@ class LVZMapObject:
         return ((self.__timeAndMode & 0xF000) >> 12)
 
     def doUpdate(self):
-        self.__bot.sendMapObjectMove(
+        self.__bot.send_map_object_move(
             self.__pid,
             self.__updateInfo,
             self.__x_pos,

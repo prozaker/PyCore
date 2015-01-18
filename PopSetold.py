@@ -1,8 +1,9 @@
-from SubspaceBot import *
 import TimerManager
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
-
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.ships import *
+from subspace_bot.constants.events import *
 
 class Tier():
     def __init__(self, min_pop, sets, desc):
@@ -23,21 +24,21 @@ class Tier():
         return self.min_pop
 
     def doTransition(self, ssbot):
-        ssbot.sendChangeSettings(self.sets)
-        ssbot.sendArenaMessage(
+        ssbot.send_change_settings(self.sets)
+        ssbot.send_arena_message(
             "Population has changed, settings changed to POPSET:" + self.desc)
 
     def printReply(self, ssbot, event):
-        ssbot.sendReply(
+        ssbot.send_reply(
             event, "Tier: " + self.desc + " MinPop: " + str(self.min_pop))
         for s in self.sets:
-            ssbot.sendReply(event, "Tier Setting(s):" + s)
+            ssbot.send_reply(event, "Tier Setting(s):" + s)
 
     def printPublic(self, ssbot):
-        ssbot.sendPublicMessage(
+        ssbot.send_public_message(
             "Tier: " + self.desc + " MinPop: " + str(self.min_pop))
         for s in self.sets:
-            ssbot.sendPublicMessage("Tier Setting(s):" + s)
+            ssbot.send_public_message("Tier Setting(s):" + s)
 
     def __repr__(self):
         return self.desc
@@ -47,7 +48,7 @@ class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
         # register Your Module
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "Popset",
             "The Junky",
@@ -55,7 +56,7 @@ class Bot(BotInterface):
             ".01"
         )
         # register your commands
-        self.cmddt = ssbot.registerCommand(
+        self.cmddt = ssbot.register_command(
             '!doTransition',
             "!dt",
             2,
@@ -64,7 +65,7 @@ class Bot(BotInterface):
             "",
             "Control settings based on pop"
         )
-        self.cmdlt = ssbot.registerCommand(
+        self.cmdlt = ssbot.register_command(
             '!listTransition',
             "!lt",
             0,
@@ -126,12 +127,12 @@ class Bot(BotInterface):
             if event.command.id == self.cmddt:
                 self.doTransition(ssbot)
             elif event.command.id == self.cmdlt:
-                ssbot.sendReply(event, "Current Setting:" + str(self.current))
+                ssbot.send_reply(event, "Current Setting:" + str(self.current))
                 for t in self.tiers:
                     t.printReply(ssbot, event)
         elif event.type == EVENT_ENTER:
             if self.current:
-                ssbot.sendPrivateMessage(
+                ssbot.send_private_message(
                     event.player,
                     "Current Setting:%s ::!lt for more details" % str(
                         self.current)

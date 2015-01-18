@@ -1,19 +1,24 @@
-'''
+"""
 @author: The Junky
-'''
-from SubspaceBot import *
-from BotUtilities import *
+"""
+
+
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
 from subspace_bot.utilities.graphics import tiles_to_ss_coords, \
     tiles_to_ss_area
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
+from subspace_bot.constants.events import *
+from subspace_bot.constants.ships import *
+from subspace_bot.constants.other import COORD_NONE
 
 
 class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
         # register Your Module
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "Flaginfo",
             "The Junky",
@@ -22,7 +27,7 @@ class Bot(BotInterface):
         )
         # register your commands
         self.cmd_dict = {
-            # ssbot.registerCommand(
+            # ssbot.register_command(
             #   # command
             #   # alias can be None if no alias
             #   # min access level to use this command
@@ -31,7 +36,7 @@ class Bot(BotInterface):
             #   # what args if any this command accepts use "" if none
             #   # short description of the command displayed in help
             # ) : # cmdHandler(self, ssbot, event)
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!listflags',
                 "!lf",
                 1,
@@ -40,7 +45,7 @@ class Bot(BotInterface):
                 "",
                 "List all flags in the arena"): self.cmdLF,
 
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!pickupflags',
                 "!pf",
                 1,
@@ -49,7 +54,7 @@ class Bot(BotInterface):
                 "fid1, fid2...",
                 "pickup flags by id"): self.cmdPF,
 
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!warpto',
                 "!wt",
                 1,
@@ -58,7 +63,7 @@ class Bot(BotInterface):
                 "SScoord",
                 "e.g A1 or T20 use -!+ for low, mid, high"): self.cmdWT,
 
-            ssbot.registerCommand(
+            ssbot.register_command(
                 '!flagwarpto',
                 "!fwt",
                 1,
@@ -77,7 +82,7 @@ class Bot(BotInterface):
     def handle_events(self, ssbot, event):
         # whatever events your bot needs to respond to add code here to do it
         if event.type == EVENT_LOGIN:
-            ssbot.sendPublicMessage("?get flag:maxflags")
+            ssbot.send_public_message("?get flag:maxflags")
         elif event.type == EVENT_COMMAND and event.command.id in \
                 self.cmd_dict:
             self.cmd_dict[event.command.id](ssbot, event)
@@ -90,37 +95,37 @@ class Bot(BotInterface):
             if p.pid == ssbot.pid:
                 if p.ship == SHIP_WARBIRD:
                     if self.pstate == 1:
-                        ssbot.sendFreqChange(9998)
+                        ssbot.send_freq_change(9998)
                         self.pstate = 2
                     elif self.pstate == 2:
                         for f in self.flist:
-                            ssbot.sendPickupFlags(f)
+                            ssbot.send_pickup_flags(f)
                 if p.ship == SHIP_JAVELIN and self.pstate == 3:
-                        ssbot.sendShipChange(SHIP_NONE)
-                        ssbot.sendPublicMessage("*arenaFlags neuted")
+                        ssbot.send_ship_change(SHIP_NONE)
+                        ssbot.send_public_message("*arenaFlags neuted")
                         self.pstate = 4
         elif event.type == EVENT_FLAG_PICKUP:
             p = event.player
             if p.pid == ssbot.pid:
                 self.fc += 1
                 if self.fc == len(self.flist):
-                    ssbot.sendShipChange(SHIP_JAVELIN)
+                    ssbot.send_ship_change(SHIP_JAVELIN)
                     self.pstate = 3
 
     def cmdLF(self, ssbot, event):
         for p in ssbot.players_here:
             if p.flag_count > 0:
-                ssbot.sendReply(event, "Carried: %s:(%d) flags" % (
+                ssbot.send_reply(event, "Carried: %s:(%d) flags" % (
                     p.name, p.flag_count))
         for i in range(self.maxflags):
             f = ssbot.flag_list[i]
             if f.x != 0xFFFF:
-                ssbot.sendReply(event, "(%d:%d, %d)-%s-%s owned by freq:%d" % (
+                ssbot.send_reply(event, "(%d:%d, %d)-%s-%s owned by freq:%d" % (
                     f.id, f.x, f.y,
                     tiles_to_ss_coords(f.x, f.y),
                     tiles_to_ss_area(f.x, f.y),
                     f.freq))
-        ssbot.sendPublicMessage("?alert %s used !listflags" % (
+        ssbot.send_public_message("?alert %s used !listflags" % (
             event.player.name))
 
     def cmdPF(self, ssbot, event):
@@ -132,12 +137,12 @@ class Bot(BotInterface):
                 t = [int(f) for f in event.arguments_after[0].split(", ")]
                 self.flist = [i for i in t if ssbot.flag_list[i].x != 0xFFFF]
             self.pstate = 1
-            ssbot.sendShipChange(SHIP_WARBIRD)
-            ssbot.sendReply(event, "ok")
-            ssbot.sendPublicMessage("?alert %s used !pickupflags %s" % (
+            ssbot.send_ship_change(SHIP_WARBIRD)
+            ssbot.send_reply(event, "ok")
+            ssbot.send_public_message("?alert %s used !pickupflags %s" % (
                 event.player.name, event.arguments_after[0]))
         else:
-            ssbot.sendReply(event, "no")
+            ssbot.send_reply(event, "no")
 
     def cmdFWT(self, ssbot, event):
         if len(event.arguments) > 0:
@@ -148,15 +153,15 @@ class Bot(BotInterface):
             if fid >= 0 and fid < self.maxflags:
                 f = ssbot.flag_list[fid]
                 if f.x != COORD_NONE:
-                    ssbot.sendReply(event, "*warpto %d %d" % (f.x, f.y))
-                    ssbot.sendReply(event, "*bot %s used flagwarpto %d %d" % (
+                    ssbot.send_reply(event, "*warpto %d %d" % (f.x, f.y))
+                    ssbot.send_reply(event, "*bot %s used flagwarpto %d %d" % (
                         event.player.name, f.x, f.y))
                 else:
-                    ssbot.sendReply(event, "unknown coords or flag carried")
+                    ssbot.send_reply(event, "unknown coords or flag carried")
             else:
-                ssbot.sendReply(event, "invalid flag id")
+                ssbot.send_reply(event, "invalid flag id")
         else:
-            ssbot.sendReply(event, "invalid syntax !fwt flag_id")
+            ssbot.send_reply(event, "invalid syntax !fwt flag_id")
 
     def cmdWT(self, ssbot, event):
         if len(event.arguments) > 0:
@@ -182,21 +187,22 @@ class Bot(BotInterface):
                     else:
                         x = self.computeCoord(c, "!")
                         y = self.computeCoord(n, "!")
-                    ssbot.sendReply(event, "*bot warpto %d %d" % (
+                    ssbot.send_reply(event, "*bot warpto %d %d" % (
                         event.player.name, x, y))
-                    ssbot.sendReply(event, "*warpto %d %d" % (x, y))
+                    ssbot.send_reply(event, "*warpto %d %d" % (x, y))
                 else:
-                    ssbot.sendReply(
+                    ssbot.send_reply(
                         event,
                         "e1:Improper Format use !warpto A1 A12 A12[+-!]"
                     )
             else:
-                    ssbot.sendReply(
+                    ssbot.send_reply(
                         event,
                         "e2:Improper Format use !warpto A1 A12 A12[+-!]"
                     )
 
-    def computeCoord(self, p, po):
+    @staticmethod
+    def computeCoord(p, po):
         """
         p = 0-20
         po =
@@ -211,8 +217,9 @@ class Bot(BotInterface):
         if po == '+':
             return (p*51)+45
 
-    def cmdGO(self, ssbot, event):
-        ssbot.sendChangeArena(event.arguments[0] if
+    @staticmethod
+    def cmdGO(ssbot, event):
+        ssbot.send_change_arena(event.arguments[0] if
                               len(event.arguments) > 0 else "99")
 
     def cleanup(self):

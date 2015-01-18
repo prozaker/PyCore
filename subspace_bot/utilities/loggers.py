@@ -3,7 +3,7 @@ import sys
 import traceback
 
 
-def LogException(logger):
+def log_exception(logger):
     logger.error(sys.exc_info())
     formatted_lines = traceback.format_exc().splitlines()
     for l in formatted_lines:
@@ -20,7 +20,7 @@ class LoggingChatHandler(Handler):
         self.chat = ";" + str(chat_no) + ";"
 
     def emit(self, record):
-        self.ssbot.sendChatMessage(self.chat + self.format(record))
+        self.ssbot.send_chat_message(self.chat + self.format(record))
 
 
 class LoggingTeamHandler(Handler):
@@ -32,7 +32,7 @@ class LoggingTeamHandler(Handler):
         self.ssbot = ssbot
 
     def emit(self, record):
-        self.ssbot.sendTeamMessage(self.format(record))
+        self.ssbot.send_team_message(self.format(record))
 
 
 class LoggingPublicHandler(Handler):
@@ -46,7 +46,7 @@ class LoggingPublicHandler(Handler):
         self.ssbot = ssbot
 
     def emit(self, record):
-        self.ssbot.sendPublicMessage(self.format(record))
+        self.ssbot.send_public_message(self.format(record))
 
 
 class LoggingRemoteHandler(Handler):
@@ -59,7 +59,7 @@ class LoggingRemoteHandler(Handler):
         self.name = name
 
     def emit(self, record):
-        self.ssbot.sendRemoteMessage(self.name, self.format(record))
+        self.ssbot.send_remote_message(self.name, self.format(record))
 
 
 class ListHandler(Handler):

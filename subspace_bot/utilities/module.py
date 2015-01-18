@@ -1,7 +1,7 @@
 import sys
 import os
 
-from subspace_bot.utilities.logging import LogException
+from subspace_bot.utilities.loggers import log_exception
 from subspace_bot.interface import BotInterface
 
 
@@ -52,7 +52,7 @@ def load_bot(ssbot, modulename, param, inifile, args, logger):
     except:
             msg = "Trying to instantiate %s caused Exception"
             logger.error(msg % modulename)
-            LogException(logger)
+            log_exception(logger)
             bot = None
     finally:
         return bot

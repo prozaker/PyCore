@@ -1,19 +1,16 @@
-'''
+"""
 @author: The Junky
 
-'''
-
-from BotUtilities import *
-from SubspaceBot import *
+"""
 
 import TimerManager
 from Amysql import *
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
-from subspace_bot.utilities.messaging import SSmessenger, LoggingPublicHandler
-from subspace_bot.utilities.logging import LogException, LoggingPublicHandler
-from subspace_bot.utilities.module import LoggingPublicHandler
-
+from subspace_bot.utilities.messaging import SSmessenger
+from subspace_bot.utilities.loggers import log_exception, LoggingPublicHandler
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
 
 """
 CREATE TABLE `population` (
@@ -82,7 +79,7 @@ class PopStats:
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "Population Monitoring/Logger",
             "The Junky",
@@ -100,7 +97,7 @@ class Bot(BotInterface):
             COMMAND_TYPE_PRIVATE,
             COMMAND_TYPE_CHAT
         ]
-        self.CID_SP = bot.registerCommand(
+        self.CID_SP = bot.register_command(
             '!showpop',
             "!sp",
             2,
@@ -109,7 +106,7 @@ class Bot(BotInterface):
             "limit",
             'show last x entries'
         )
-        self.CID_SPG = bot.registerCommand(
+        self.CID_SPG = bot.register_command(
             '!showpopgraph',
             "!spg",
             2,
@@ -120,7 +117,7 @@ class Bot(BotInterface):
         )
         self.level = logging.DEBUG
 
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
         self.QTYPE_SQL = 1
         self.QTYPE_SPG = 2
         self.QTYPE_ADDPOP = 3
@@ -239,7 +236,7 @@ class Bot(BotInterface):
                         l = int(event.arguments[0])
                     except:
                         l = 10
-                        LogException(self.logger)
+                        log_exception(self.logger)
                     if l <= 100:
                         limit = "limit " + str(l)
                     else:
@@ -302,8 +299,8 @@ class Bot(BotInterface):
                 # Clear stats and repopulate
                 elif timer_expired.data == self.TID_PARSE_STATS:
                     self.popStats.Reset()
-                    ssbot.sendPublicMessage("*listmod")
-                    ssbot.sendPublicMessage("?arena")
+                    ssbot.send_public_message("*listmod")
+                    ssbot.send_public_message("?arena")
                     # do it again in 30 mins
                     self.timer_man.set(1800, self.TID_PARSE_STATS)
                     # in 10 secs pop stats will be done send it to db
@@ -333,7 +330,7 @@ class Bot(BotInterface):
                         s.smods,
                         s.mods
                     )
-                    ssbot.sendPublicMessage(query % qtp)
+                    ssbot.send_public_message(query % qtp)
                     # (qtype, message type to respond with,
                     # target[playername if priv msg)
                     qdata = (self.QTYPE_ADDPOP, MESSAGE_TYPE_PUBLIC, None)

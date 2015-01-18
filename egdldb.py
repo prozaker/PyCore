@@ -11,13 +11,13 @@ from subspace_bot.constants.messages import *
 from subspace_bot.constants.events import *
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
-from subspace_bot.utilities.logging import LoggingRemoteHandler
+from subspace_bot.utilities.loggers import LoggingRemoteHandler
 
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "MysqLtest",
             "The Junky",
@@ -32,7 +32,7 @@ class Bot(BotInterface):
                       COMMAND_TYPE_FREQ, COMMAND_TYPE_PRIVATE,
                       COMMAND_TYPE_CHAT]
         self.commands = {
-            # bot.registerCommand(
+            # bot.register_command(
             #     '!sql',
             #     None,
             #     9,
@@ -41,7 +41,7 @@ class Bot(BotInterface):
             #     "[query]",
             #     'sql it zz'
             # ): (self.cmd_sql, ""),
-            bot.registerCommand(
+            bot.register_command(
                 '!sqlnl',
                 None,
                 9,
@@ -50,7 +50,7 @@ class Bot(BotInterface):
                 "[query]",
                 'sql it zz'
             ): (self.cmd_sql, "nl"),
-            bot.registerCommand(
+            bot.register_command(
                 '!addplayer',
                 "!ap",
                 5,
@@ -59,7 +59,7 @@ class Bot(BotInterface):
                 "[name:vp:squadid]",
                 'create/add new player to current league'
             ): (self.cmd_ap, ""),
-            bot.registerCommand(
+            bot.register_command(
                 '!changeplayer',
                 "!cp",
                 5,
@@ -68,7 +68,7 @@ class Bot(BotInterface):
                 "[name:vp:squadid]",
                 'update existing player'
             ): (self.cmd_cp, ""),
-            bot.registerCommand(
+            bot.register_command(
                 '!deleteplayer',
                 "!dp",
                 5,
@@ -77,7 +77,7 @@ class Bot(BotInterface):
                 "[name]",
                 'update existing player'
             ): (self.cmd_dp, ""),
-            bot.registerCommand(
+            bot.register_command(
                 '!listsquads',
                 "!ls",
                 5,
@@ -86,7 +86,7 @@ class Bot(BotInterface):
                 "",
                 'list squads'
             ): (self.cmd_ls, ""),
-            bot.registerCommand(
+            bot.register_command(
                 '!listplayers',
                 "!lp",
                 5,
@@ -100,14 +100,15 @@ class Bot(BotInterface):
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(.01, 1)
         self.timer_man.set(300, 2)
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
 
         formatter = logging.Formatter('%(message)s')
         handler = LoggingRemoteHandler(logging.DEBUG, bot, "Ratio")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-    def get_message_tuple(self, event):
+    @staticmethod
+    def get_message_tuple(event):
         """
             this data will be used later in pretty printer
             when the result is to be printed back to ss
@@ -130,8 +131,9 @@ class Bot(BotInterface):
 
         return (mtype, target)
 
-    def cmd_sql(self, ssbot, event, param):
-        ssbot.sendReply(event, "Disabled")
+    @staticmethod
+    def cmd_sql(ssbot, event, param):
+        ssbot.send_reply(event, "Disabled")
         return 0
         # if len(event.arguments) >= 1:
         #     if param and param == "nl":  # automatically addlimit or not
@@ -152,7 +154,7 @@ class Bot(BotInterface):
              """
             t = event.arguments_after[0].split(":")
             if len(t) != 3:
-                ssbot.sendReply(event, "Could not parse 3 items")
+                ssbot.send_reply(event, "Could not parse 3 items")
             else:
                 # print t
                 db.query(q, (t[0], t[1], t[2]), mt)
@@ -163,7 +165,7 @@ class Bot(BotInterface):
         q = "update egdl_players p set p.vp=%s, p.squad_id=%s where p.name=%s"
         t = event.arguments_after[0].split(":")
         if len(t) != 3:
-            ssbot.sendReply(event, "Could not parse 3 items")
+            ssbot.send_reply(event, "Could not parse 3 items")
         else:
             # print t
             db.query(q, (t[1], t[2], t[0]), mt)

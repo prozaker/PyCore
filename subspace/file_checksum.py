@@ -16,14 +16,13 @@ class FileChecksum():
 
     def get_file_checksum(self, filename):
         data = open(filename, "rb").read()
-        Index = 0
-        Key = -1
+        key = -1
         i = 0
-        while(i < len(data)):
-            Index = self.d[(Key & 255) ^ ord(data[i])]
-            Key = (Key >> 8) ^ Index
+        while i < len(data):
+            index = self.d[(key & 255) ^ ord(data[i])]
+            key = (key >> 8) ^ index
             i += 1
-        return ~Key
+        return ~key
 
     def generate_4(self, offset, key):
         self.d[offset] = key

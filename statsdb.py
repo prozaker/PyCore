@@ -1,21 +1,22 @@
-'''
+"""
 @author: The Junky
 
-'''
+"""
 
-from BotUtilities import *
-from SubspaceBot import *
 import TimerManager
 from Amysql import *
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
-from subspace_bot.utilities.logging import LoggingRemoteHandler
+from subspace_bot.utilities.loggers import LoggingRemoteHandler
+from subspace_bot.constants.events import *
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.messages import *
 
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "stats",
             "The Junky",
@@ -29,27 +30,27 @@ class Bot(BotInterface):
         # self.clist = [COMMAND_TYPE_PUBLIC, COMMAND_TYPE_TEAM,
         #   COMMAND_TYPE_FREQ, COMMAND_TYPE_PRIVATE, COMMAND_TYPE_CHAT]
         self.clist = [COMMAND_TYPE_PRIVATE]
-        # self._sql_command_id = bot.registerCommand(
+        # self._sql_command_id = bot.register_command(
         #   '!sql', None, 9, self.clist, "web", "[query]", 'sql it zz')
-        # self._sqlnl_command_id = bot.registerCommand(
+        # self._sqlnl_command_id = bot.register_command(
         #   '!sqlnl', None, 9, self.clist, "web", "[query]", 'sql it zz')
-        self._last_jp = bot.registerCommand(
+        self._last_jp = bot.register_command(
             '!jackpots', None, 0, self.clist, "Stats", "", 'last jackpots won')
-        self._recs = bot.registerCommand(
+        self._recs = bot.register_command(
             '!recs', None, 0, self.clist, "Stats", "[reset id]", 'top ratios')
-        self._points = bot.registerCommand(
+        self._points = bot.register_command(
             '!points', None, 0, self.clist, "Stats", "[reset id]",
             'Top points')
-        self._squads = bot.registerCommand(
+        self._squads = bot.register_command(
             '!squads', None, 0, self.clist, "Stats", "[reset id]",
             'top squads')
-        self._resets = bot.registerCommand(
+        self._resets = bot.register_command(
             '!resets', None, 0, self.clist, "Stats", "", 'recentreset ids')
         self.level = logging.DEBUG
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(.01, 1)
         self.timer_man.set(300, 2)
-        self.chat = bot.addChat("st4ff")
+        self.chat = bot.add_chat("st4ff")
         self.cache = {
             # !cmd: (Cached_result, time)
             "!jackpots": (None, 0, "jackpots.txt"),

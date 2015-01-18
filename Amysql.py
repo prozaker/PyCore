@@ -270,7 +270,7 @@ class Amysql(threading.Thread):
             m.message = e.args[1]
             m.e = e
             self.logger.info("MysqlConnect:%d: %s" % (e.args[0], e.args[1]))
-            # BotUtilities.LogException(self.logger)
+            # BotUtilities.log_exception(self.logger)
         finally:
             return m
 

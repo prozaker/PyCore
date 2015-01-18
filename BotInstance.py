@@ -1,22 +1,22 @@
 # -*- coding: UTF-8 -*-
-'''
+"""
 masterbot for cycad's python core written by The Junky<thejunky@gmail.com>
 @author: The Junky
-'''
-
+"""
+import logging
+import time
 from threading import Thread
 
-from SubspaceBot import *
-from BotUtilities import *
-from subspace_bot.utilities.logging import LogException
+from subspace_bot.objects.bot import SubspaceBot
+from subspace_bot.utilities.loggers import log_exception
 from subspace_bot.utilities.module import load_bot
 
 
 class BotInstance(Thread):
-    def __init__(self, id, type, description, owner, bname, bpassword,
+    def __init__(self, bot_id, type, description, owner, bname, bpassword,
                  inifile, host, port, arena, modules, MQueue, args, logger):
         Thread.__init__(self)
-        self.id = id
+        self.id = bot_id
         self.type = type
         self.description = description
         self.owner = owner
@@ -42,17 +42,17 @@ class BotInstance(Thread):
 
     def queueBroadcast(self, event):  # used by master
         if self.ssbot:
-            self.ssbot.queueBroadcast(event)
+            self.ssbot.queue_broadcast(event)
 
     def run(self):
+        ssbot = None
+        botlist = []
         try:
-            BotList = []
             ssbot = SubspaceBot(False, False, self.MQueue, logging.getLogger(
                 "ML." + self.type + ".Core"))
-            ssbot.setBotInfo(self.type, self.description, self.owner)
+            ssbot.set_bot_info(self.type, self.description, self.owner)
             self.ssbot = ssbot
             ssbot.arena = self.arena  # serexl's bots look at arena in init
-            bot = None
             for m in self.modules:
                 bot = load_bot(
                     ssbot,
@@ -63,8 +63,7 @@ class BotInstance(Thread):
                     logging.getLogger("ML." + self.type + "." + m[0])
                 )
                 if bot:
-                    BotList.append(bot)
-                bot = None
+                    botlist.append(bot)
             retry = 0
             while self.keepgoing:
                 ssbot.connect_to_server(
@@ -74,10 +73,10 @@ class BotInstance(Thread):
                     self.bpassword,
                     self.arena
                 )
-                while ssbot.isConnected() and self.keepgoing:
+                while ssbot.is_connected() and self.keepgoing:
                         retry = 0
                         event = ssbot.wait_for_event()
-                        for b in BotList:
+                        for b in botlist:
                             b.handle_events(ssbot, event)
                 if ssbot.should_reconnect() and retry < 6:
                     self.logger.debug("Disconnected...")
@@ -89,9 +88,9 @@ class BotInstance(Thread):
                     break
 
         except:
-            LogException(self.logger)
+            log_exception(self.logger)
         finally:
-            if ssbot.isConnected():
+            if isinstance(ssbot, SubspaceBot) and ssbot.is_connected():
                 ssbot.disconnect_from_server()
-            for b in BotList:
+            for b in botlist:
                 b.cleanup()

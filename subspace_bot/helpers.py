@@ -4,7 +4,7 @@ import os
 
 from subspace_bot.constants.ships import SHIP_NAMES
 from subspace_bot.objects.bot import SubspaceBot
-from subspace_bot.utilities.logging import LogException
+from subspace_bot.utilities.loggers import log_exception
 from subspace_bot.utilities.module import ModuleData
 
 
@@ -16,7 +16,7 @@ def get_ship_name(ship):
         return 'Unknown'
 
 
-def bot_main(Bot, debug=False, isMaster=False, arena="#python"):
+def bot_main(bot_class, debug=False, is_master=False, arena="#python"):
     """Use this method to test bots during development (to run bots
     in stand-alone mode)
     """
@@ -45,23 +45,23 @@ def bot_main(Bot, debug=False, isMaster=False, arena="#python"):
         logger.addHandler(filehandler)
 
         ssbot = SubspaceBot(
-            debug, isMaster, None, logging.getLogger(__name__ + ".Core"))
-        ssbot.setBotInfo(__name__, "TestBoT", botowner)
+            debug, is_master, None, logging.getLogger(__name__ + ".Core"))
+        ssbot.set_bot_info(__name__, "TestBoT", botowner)
 
         # get the module object for the current file...
         module = sys.modules[globals()['__name__']]
         md = ModuleData("TesttBot", module, "None", "test.ini", "",
                         logging.getLogger(__name__))
-        bot = Bot(ssbot, md)
+        bot = bot_class(ssbot, md)
 
         ssbot.connect_to_server(
             '66.36.247.83', 7900, botname, botpassword, arena)
 
-        while ssbot.isConnected():
+        while ssbot.is_connected():
             event = ssbot.wait_for_event()
             bot.handle_events(ssbot, event)
     except Exception as e:
-        LogException(logger)
+        log_exception(logger)
         raise e
     finally:
         bot.cleanup()

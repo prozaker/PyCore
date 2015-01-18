@@ -118,7 +118,7 @@ updates:
             player.y_pos = y_pos
             player.x_vel = x_vel
             player.y_vel = y_vel
-            player._setStatus(status)
+            player.set_status(status)
             player.bounty = bounty
             player.ping = latency
             player.last_pos_update_tick = get_tick_count_hs()
@@ -160,9 +160,9 @@ Sets: type, arena_list"""
 EVENT_TIMER = 13
 """A timer has expired.
 
-id is the ID of the timer, returned by bot.setTimer(), of the timer
+id is the ID of the timer, returned by bot.set_timer(), of the timer
 that expired. user_data is the same user_data passed to
-bot.setTimer() during the timer's creation.
+bot.set_timer() during the timer's creation.
 
 Timers are only granular to .1 second.
 

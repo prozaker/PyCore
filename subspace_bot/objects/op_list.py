@@ -37,10 +37,10 @@ class Oplist:
         c = 0
         for name, lvl in self.__ops_dict.iteritems():
             if event.plvl == lvl:
-                ssbot.sendReply(event, "OP:%25s:%i" % (name, lvl))
+                ssbot.send_reply(event, "OP:%25s:%i" % (name, lvl))
             c += 1
         if c == 0:
-            ssbot.sendReply(event, "No Ops")
+            ssbot.send_reply(event, "No Ops")
 
     def Read(self):
         self.__ops_dict = {}

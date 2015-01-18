@@ -39,7 +39,7 @@ class SSmessenger():
             self.func = self.__pub
         elif mtype == MESSAGE_TYPE_PRIVATE:
             if isinstance(target, str):
-                self.player = ssbot.findPlayerByName(target)
+                self.player = ssbot.find_player_by_name(target)
                 if not self.player:
                     raise SSmessengerException("Player NotFound")
             elif isinstance(Player, target):
@@ -74,22 +74,22 @@ class SSmessenger():
             raise SSmessengerException("MessageType not supported")
 
     def __pub(self, message, sound=SOUND_NONE):
-        self.ssbot.sendPublicMessage(message, sound)
+        self.ssbot.send_public_message(message, sound)
 
     def __priv(self, message, sound=SOUND_NONE):
-        self.ssbot.sendPrivateMessage(self.player, message, sound)
+        self.ssbot.send_private_message(self.player, message, sound)
 
     def __rmt(self, message, sound=SOUND_NONE):
-        self.ssbot.sendRemoteMessage(self.playername, message, sound)
+        self.ssbot.send_remote_message(self.playername, message, sound)
 
     def __team(self, message, sound=SOUND_NONE):
-        self.ssbot.sendTeamMessage(message, sound)
+        self.ssbot.send_team_message(message, sound)
 
     def __freq(self, message, sound=SOUND_NONE):
-        self.ssbot.sendFreqMessage(self.freq, message, sound)
+        self.ssbot.send_freq_message(self.freq, message, sound)
 
     def __chat(self, message, sound=SOUND_NONE):
-        self.ssbot.sendChatMessage(self.chat + message, sound)
+        self.ssbot.send_chat_message(self.chat + message, sound)
 
     def send_message(self, message, sound=SOUND_NONE):
         self.func(self.prefix + message, sound)

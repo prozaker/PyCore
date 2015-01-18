@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 @author: The Junky <thejunky@gmail.com>
 ---
 Subgame Peering Assistant
@@ -9,45 +9,44 @@ new peering module to server.ini peering section
 dynamically, so when players in subgame zones ?go PB:0
 or ?go to anyother peered arena it will work.
 
-'''
-from sets import Set
+"""
 
-from SubspaceBot import *
 import TimerManager
 from subspace_bot.helpers import bot_main
 from subspace_bot.interface import BotInterface
+from subspace_bot.constants.events import *
 
 
 class Bot(BotInterface):
     def __init__(self, ssbot, md):
         BotInterface.__init__(self, ssbot, md)
         # register Your Module
-        ssbot.registerModuleInfo(
+        ssbot.register_module_info(
             __name__,
             "SG Peering Assistant",
             "The Junky",
             "adds peered arenas to ini dynamically",
             ".01"
         )
-        # "CZ":[4, Set()] the 4 means it will go into [peer4] section
+        # "CZ":[4, set()] the 4 means it will go into [peer4] section
         self.zones = {
-            "TW": [0, Set(), ["", "0"]],
-            "SWZ": [1, Set(), ["", "0"]],
-            "CZ": [2, Set(), ["", "0"]],
-            "DSB": [3, Set(), ["", "0", ]],
-            "PB": [4, Set(), ["", "0", "replay"]],
-            "EG2": [5, Set(), ["", "0", "egfl"]],
-            "TS": [6, Set(), ["", "0"]]
+            "TW": [0, set(), ["", "0"]],
+            "SWZ": [1, set(), ["", "0"]],
+            "CZ": [2, set(), ["", "0"]],
+            "DSB": [3, set(), ["", "0", ]],
+            "PB": [4, set(), ["", "0", "replay"]],
+            "EG2": [5, set(), ["", "0", "egfl"]],
+            "TS": [6, set(), ["", "0"]]
         }
         self.peers = {
             # peerid:(old, new)
-            0: [Set(), Set()],
-            1: [Set(), Set()],
-            2: [Set(), Set()],
-            3: [Set(), Set()],
-            4: [Set(), Set()],
-            5: [Set(), Set()],
-            6: [Set(), Set()]
+            0: [set(), set()],
+            1: [set(), set()],
+            2: [set(), set()],
+            3: [set(), set()],
+            4: [set(), set()],
+            5: [set(), set()],
+            6: [set(), set()]
         }
         self.timer_man = TimerManager.TimerManager()
         self.timer_man.set(20, 1)
@@ -55,7 +54,7 @@ class Bot(BotInterface):
     def handle_events(self, ssbot, event):
         # whatever events your bot needs to respond to add code here to do it
         if event.type == EVENT_LOGIN:
-            ssbot.sendPublicMessage("?Arena")
+            ssbot.send_public_message("?Arena")
 
         elif event.type == EVENT_TICK:
             timer_expired = self.timer_man.getExpired()  # a timer expired
@@ -63,7 +62,7 @@ class Bot(BotInterface):
                 # self.logger.info("timer expired")
                 if timer_expired.data == 1:
                     # self.logger.info("?arena")
-                    ssbot.sendPublicMessage("?Arena")
+                    ssbot.send_public_message("?Arena")
                     self.timer_man.set(20, 1)
 
         elif event.type == EVENT_ARENA_LIST:
@@ -104,9 +103,9 @@ class Bot(BotInterface):
                     if len(s) > 256:
                         self.logger.debug(
                             "peer" + str(k) + " string too big::" + s)
-                        ssbot.sendPublicMessage(s[0:255])
+                        ssbot.send_public_message(s[0:255])
                     else:
-                        ssbot.sendPublicMessage(s)
+                        ssbot.send_public_message(s)
                     # self.logger.info(s)
                 # else:
                 #    self.logger.info("no change in arenas")

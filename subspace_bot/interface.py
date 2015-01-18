@@ -1,5 +1,6 @@
 class BotInterface:
     # TODO: remove bot param from constructor signature
+
     def __init__(self, bot, md):
         self.md = md
         # param defined in config, could be any string

@@ -1,5 +1,6 @@
 from subspace_bot.constants.statuses import *
 
+
 class Player:
     """A class that represents the a Player.  All values are read-only
     to bots except for the 'player_info' variable that is reserved for
@@ -140,7 +141,7 @@ class Player:
         self.y_vel = 0
         self.last_pos_update_tick = None
         self.player_info = None
-        self._setStatus(0x00)
+        self.set_status(0x00)
 
         self.flag_points = 0
         self.kill_points = 0
@@ -175,7 +176,7 @@ class Player:
     def __str__(self):
         return self.name
 
-    def _setStatus(self, status_flags):
+    def set_status(self, status_flags):
         """Updates the player's status with the status flags received
         in the position update packet."""
         self.status_stealth = status_flags & STATUS_STEALTH != 0

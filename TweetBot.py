@@ -1,12 +1,13 @@
 import twitter
-from SubspaceBot import *
-from subspace_bot.interface import BotInterface
 
+from subspace_bot.interface import BotInterface
+from subspace_bot.constants.commands import *
+from subspace_bot.constants.events import *
 
 class Bot(BotInterface):
     def __init__(self, bot, md):
         BotInterface.__init__(self, bot, md)
-        bot.registerModuleInfo(
+        bot.register_module_info(
             __name__,
             "TweetBot",
             "The Junky",
@@ -14,7 +15,7 @@ class Bot(BotInterface):
             ".01"
         )
         self._api = twitter.Api(username='extreme_games', password=self.param)
-        self._tweet_command_id = bot.registerCommand(
+        self._tweet_command_id = bot.register_command(
             '!tweet',
             "!tw",
             0,
@@ -32,17 +33,17 @@ class Bot(BotInterface):
                         len(event.arguments_after[0]) < 140:
                     status = self._api.PostUpdate("%s - %s" % (
                         event.arguments_after[0], event.player.name))
-                    bot.sendArenaMessage(
+                    bot.send_arena_message(
                         "%s just posted: %s on twitter" % (
                             status.user.name, status.text)
                     )
                 else:
-                    bot.sendPrivateMessage(
+                    bot.send_private_message(
                         event.player.name,
                         "you must provide a message of 1 to 140 characters"
                     )
             else:
-                bot.sendPrivateMessage(event.player.name, "access denied")
+                bot.send_private_message(event.player.name, "access denied")
 
     def cleanup(self):
         pass
