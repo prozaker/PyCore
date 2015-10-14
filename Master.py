@@ -366,6 +366,9 @@ class Bot(BotInterface):
 
 
 def MasterMain():
+    ssbot = None
+    master = None
+    BotList = None
     try:
         # other bots use logging i dont want it to spamm the main logger
         rootlogger = logging.getLogger('')
@@ -488,15 +491,17 @@ def MasterMain():
         logger.critical("Unhandled Exception")
         log_exception(logger)
     finally:
-        if ssbot.is_connected():
+        if ssbot and ssbot.is_connected():
             ssbot.disconnect_from_server()
         logger.info("Master disconnected")
         logger.info("Waiting For Bots to stop")
         logger.critical("Master shutting down")
-        master.StopAllBots()
+        if master:
+            master.StopAllBots()
         logger.critical("Requested Stop for all active bots...")
-        for b in BotList:
-            b.cleanup()
+        if BotList:
+            for b in BotList:
+                b.cleanup()
         logger.critical("Master Bot behaviors cleansed")
         filehandler.close()
         sys.exit(1)
